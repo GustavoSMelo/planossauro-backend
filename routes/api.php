@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\PlansController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,3 +20,8 @@ Route::post('/planning', [PlanningController::class, 'store']);
 Route::get('/planning/{uuid}', [PlanningController::class, 'show']);
 Route::put('/planning/{uuid}', [PlanningController::class, 'update']);
 Route::delete('/planning/{uuid}', [PlanningController::class, 'destroy']);
+
+// Plans routes
+
+Route::get('/plans', [PlansController::class, 'index']);
+Route::get('/plans/{uuid}', [PlansController::class, 'show']);
