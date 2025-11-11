@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\UserController;
@@ -25,3 +26,6 @@ Route::delete('/planning/{uuid}', [PlanningController::class, 'destroy']);
 
 Route::get('/plans', [PlansController::class, 'index']);
 Route::get('/plans/{uuid}', [PlansController::class, 'show']);
+
+// Auth routes
+Route::get('/auth/github/{code}', [AuthController::class, 'githubAuth']);
