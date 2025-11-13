@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +19,11 @@
             </style>
         @endif
     </head>
-    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
-        <h1>Planeja.ai backend</h1>
+    <body>
+        <div class="bg-gray-200 flex items-center justify-center">
+            <h1 class="text-pink-600">Welcome to Planeja.ai</h1>
+            <p>Para validar seu email e usar 100% de nossa plataforma, insira o codigo de validacao abaixo:</p>
+            <h2 class="text-blue-950">{{ $validation_code }}</h2>
+        </div>
     </body>
 </html>

@@ -28,7 +28,16 @@ class User extends Model
     /**
      * @var array<string, string, string, string>
      */
-    protected $fillable = ['uuid', 'google_email', 'github_email', 'full_name', 'cellphone_number'];
+    protected $fillable = [
+        'uuid',
+        'google_email',
+        'github_email',
+        'github_id',
+        'full_name',
+        'cellphone_number',
+        'validation_code',
+        'is_validated'
+    ];
 
     public static function booted()
     {

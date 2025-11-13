@@ -13,6 +13,8 @@ Route::post('/user', [UserController::class, 'store']);
 Route::get('/user/{uuid}', [UserController::class, 'show']);
 Route::put('/user/{uuid}', [UserController::class, 'update']);
 Route::delete('/user/{uuid}', [UserController::class, 'destroy']);
+Route::get('/user/github/{githubEmail}', [UserController::class, 'findByGithubEmail']);
+Route::post('/user/resend/validationcode', [UserController::class, 'resendEmail']);
 
 // Planning routes
 
