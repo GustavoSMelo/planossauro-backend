@@ -141,6 +141,8 @@ class UserController extends Controller
                 'github_email' => $request->github_email,
                 'google_email' => $request->google_email,
                 'cellphone_number' => $request->cellphone_number,
+                'validation_code' => rand(10000, 99999),
+                'is_validated' => false
             ]);
 
             return response()->json([
@@ -193,6 +195,19 @@ class UserController extends Controller
                     'html' => view('mail.validation-mail', ['validation_code' => $user->validation_code])->render()
                 ]);
             }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'User not founded', 'errorData' => $e], 400);
+        }
+    }
+
+    public function validateEmail(string $uuid)
+    {
+        try {
+            $userFinded = User::query()->where('uuid', '=', $uuid)->first();
+
+            $userFinded->update([
+                'is_validated' => true
+            ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'User not founded', 'errorData' => $e], 400);
         }

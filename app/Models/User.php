@@ -36,6 +36,8 @@ class User extends Model
         'full_name',
         'cellphone_number',
         'validation_code',
+        'sms_validation_code',
+        'sms_is_validated',
         'is_validated'
     ];
 

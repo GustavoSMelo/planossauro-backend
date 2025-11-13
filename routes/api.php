@@ -15,6 +15,7 @@ Route::put('/user/{uuid}', [UserController::class, 'update']);
 Route::delete('/user/{uuid}', [UserController::class, 'destroy']);
 Route::get('/user/github/{githubEmail}', [UserController::class, 'findByGithubEmail']);
 Route::post('/user/resend/validationcode', [UserController::class, 'resendEmail']);
+Route::patch('/user/validate/email/{uuid}', [UserController::class, 'validateEmail']);
 
 // Planning routes
 
