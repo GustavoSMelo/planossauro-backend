@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\UserController;
+use App\Models\UserPlanning;
 use Illuminate\Support\Facades\Route;
 
 // User routes
@@ -32,3 +33,8 @@ Route::get('/plans/{uuid}', [PlansController::class, 'show']);
 
 // Auth routes
 Route::get('/auth/github/{code}', [AuthController::class, 'githubAuth']);
+
+// User Planning (relationship) routes
+Route::post('/user/planning', [UserPlanning::class, 'store']);
+Route::get('/user/planning/{userUuid}', [UserPlanning::class, 'index']);
+Route::delete('/user/planning/{uuid}', [UserPlanning::class, 'destroy']);

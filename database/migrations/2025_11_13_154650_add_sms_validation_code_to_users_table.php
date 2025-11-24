@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('user', function (Blueprint $table) {
             $table->addColumn('integer', 'sms_validation_code')->default(rand(10000, 99999));
             $table->addColumn('boolean', 'sms_is_validated')->default(false);
         });
@@ -22,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('user', function (Blueprint $table) {
             $table->dropColumn('sms_validation_code');
             $table->dropColumn('sms_is_validated');
         });

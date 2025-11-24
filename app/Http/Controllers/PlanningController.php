@@ -28,7 +28,7 @@ class PlanningController extends Controller
             $request->validate([
                 'document_b64' => ['required', 'string'],
                 'start_plan' => ['required', 'date'],
-                'end_plan' => ['required', 'date', 'after:start_plan'],
+                'end_plan' => ['required', 'date', 'after_or_equal:start_plan'],
                 'school_name' => ['required', 'string'],
                 'class_name' => ['required', 'string']
             ]);
@@ -49,7 +49,7 @@ class PlanningController extends Controller
 
             return response()->json(['message' => 'Planning created with success!', 'data' => $planning]);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'malformated planning', 400]);
+            return response()->json(['message' => 'malformated planning', 'error' => $e, 400]);
         }
     }
 
