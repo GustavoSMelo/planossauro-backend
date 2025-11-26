@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_planning', function (Blueprint $table) {
-            $table->uuid()->primary();
-            $table->timestamps();
+        Schema::table('planning', function (Blueprint $table) {
+            $table->date('deleted_at')->nullable(true);
             $table->foreignUuid('user_id')->references('uuid')->on('user');
-            $table->foreignUuid('planning_id')->references('uuid')->on('planning');
         });
     }
 
@@ -24,6 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_planning');
+        Schema::table('planning', function (Blueprint $table) {
+            $table->dropColumn('deleted_at');
+            $table->dropColumn('user_id');
+        });
     }
 };

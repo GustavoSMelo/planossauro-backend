@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Planning;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 
 class PlanningController extends Controller
 {
@@ -30,8 +32,17 @@ class PlanningController extends Controller
                 'start_plan' => ['required', 'date'],
                 'end_plan' => ['required', 'date', 'after_or_equal:start_plan'],
                 'school_name' => ['required', 'string'],
-                'class_name' => ['required', 'string']
+                'class_name' => ['required', 'string'],
+                'user_id' => ['required', 'string', 'uuid']
             ]);
+
+            $user_id = $request->input('user_id');
+
+            $user = User::find($user_id);
+
+            if (!$user || empty($user) || is_null($user)) {
+                return response()->json(['error' => 'UUID provided is not associated with any user'], 400);
+            }
 
             $documentb64 = $request->input('document_b64');
             $start_plan = $request->input('start_plan');
@@ -44,7 +55,8 @@ class PlanningController extends Controller
                 'class_name' => $class_name,
                 'end_plan' => $end_plan,
                 'school_name' => $school_name,
-                'start_plan' => $start_plan
+                'start_plan' => $start_plan,
+                'user_id' => $user_id
             ]);
 
             return response()->json(['message' => 'Planning created with success!', 'data' => $planning]);
@@ -80,8 +92,17 @@ class PlanningController extends Controller
                 'start_plan' => ['required', 'date'],
                 'end_plan' => ['required', 'date', 'after:start_plan'],
                 'school_name' => ['required', 'string'],
-                'class_name' => ['required', 'string']
+                'class_name' => ['required', 'string'],
+                'user_id' => ['required', 'string', 'uuid']
             ]);
+
+            $user_id = $request->input('user_id');
+
+            $user = User::find($user_id);
+
+            if (!$user || empty($user) || is_null($user)) {
+                return response()->json(['error' => 'UUID provided is not associated with any user'], 400);
+            }
 
             $documentb64 = $request->input('document_b64');
             $start_plan = $request->input('start_plan');
@@ -107,6 +128,40 @@ class PlanningController extends Controller
             return response()->json([
                 'error' => 'Planning malformated or not founded id'
             ]);
+        }
+    }
+
+    public function archive(string $uuid)
+    {
+        try {
+            $planning = Planning::query()->where('uuid', '=', $uuid)->first();
+
+            $planning->update([
+                'deleted_at' => Date::now()->year . '-' . Date::now()->month . '-' . Date::now()->day
+            ]);
+
+            return response()->json([
+                'message' => 'Planning archived with success'
+            ]);
+        } catch (\Exception $err) {
+            return response()->json(['message' => 'Planning not founded', 'error' => $err], 400);
+        }
+    }
+
+    public function unarchive(string $uuid)
+    {
+        try {
+            $planning = Planning::query()->where('uuid', '=', $uuid)->first();
+
+            $planning->update([
+                'deleted_at' => null
+            ]);
+
+            return response()->json([
+                'message' => 'Planning unarchived with success'
+            ]);
+        } catch (\Exception $err) {
+            return response()->json(['message' => 'Planning not founded', 'error' => $err], 400);
         }
     }
 

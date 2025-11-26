@@ -22,7 +22,7 @@ class Planning extends Model
     /**
      * @var array<string, string, string, string, string>
      */
-    protected $fillable = ['document_b64', 'start_plan', 'end_plan', 'school_name', 'class_name'];
+    protected $fillable = ['document_b64', 'start_plan', 'end_plan', 'school_name', 'class_name', 'deleted_at', 'user_id'];
 
     /**
      * @var bool

@@ -25,6 +25,8 @@ Route::post('/planning', [PlanningController::class, 'store']);
 Route::get('/planning/{uuid}', [PlanningController::class, 'show']);
 Route::put('/planning/{uuid}', [PlanningController::class, 'update']);
 Route::delete('/planning/{uuid}', [PlanningController::class, 'destroy']);
+Route::patch('/planning/archive/{uuid}', [PlanningController::class, 'archive']);
+Route::patch('/planning/unarchive/{uuid}', [PlanningController::class, 'unarchive']);
 
 // Plans routes
 
@@ -33,8 +35,3 @@ Route::get('/plans/{uuid}', [PlansController::class, 'show']);
 
 // Auth routes
 Route::get('/auth/github/{code}', [AuthController::class, 'githubAuth']);
-
-// User Planning (relationship) routes
-Route::post('/user/planning', [UserPlanning::class, 'store']);
-Route::get('/user/planning/{userUuid}', [UserPlanning::class, 'index']);
-Route::delete('/user/planning/{uuid}', [UserPlanning::class, 'destroy']);
