@@ -11,13 +11,33 @@ class PlanningController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * @param string $user_id
      */
-    public function index()
+    public function index(string $user_id)
     {
         try {
-            return Planning::all();
+            return Planning::query()
+                ->orderBy('updated_at', 'desc')
+                ->where('user_id', '=', $user_id)
+                ->paginate(5, '*');
         } catch (\Exception $e) {
             return response()->json(['Error to receive values from database', 400]);
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $uuid)
+    {
+        try {
+            if (empty($uuid) || strlen($uuid) <= 3 || $uuid === null) {
+                return response()->json(['error' => 'uuid provided was not valid'], 400);
+            }
+
+            return Planning::query()->where('uuid', '=', $uuid)->first();
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Planning not founded', 'error' => $e], 400);
         }
     }
 
@@ -62,22 +82,6 @@ class PlanningController extends Controller
             return response()->json(['message' => 'Planning created with success!', 'data' => $planning]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'malformated planning', 'error' => $e, 400]);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $uuid)
-    {
-        try {
-            if (empty($uuid) || strlen($uuid) <= 3 || $uuid === null) {
-                return response()->json(['error' => 'uuid provided was not valid'], 400);
-            }
-
-            return Planning::query()->where('uuid', '=', $uuid)->first();
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Planning not founded'], 400);
         }
     }
 

@@ -20,9 +20,9 @@ Route::patch('/user/validate/email/{uuid}', [UserController::class, 'validateEma
 
 // Planning routes
 
-Route::get('/planning', [PlanningController::class, 'index']);
+Route::get('/planning/paginate/{uuid}', [PlanningController::class, 'index']);
 Route::post('/planning', [PlanningController::class, 'store']);
-Route::get('/planning/{uuid}', [PlanningController::class, 'show']);
+Route::get('/planning/show/{uuid}', [PlanningController::class, 'show']);
 Route::put('/planning/{uuid}', [PlanningController::class, 'update']);
 Route::delete('/planning/{uuid}', [PlanningController::class, 'destroy']);
 Route::patch('/planning/archive/{uuid}', [PlanningController::class, 'archive']);
