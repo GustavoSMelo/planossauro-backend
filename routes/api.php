@@ -4,7 +4,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\UserController;
-use App\Models\UserPlanning;
 use Illuminate\Support\Facades\Route;
 
 // User routes
@@ -20,6 +19,7 @@ Route::patch('/user/validate/email/{uuid}', [UserController::class, 'validateEma
 
 // Planning routes
 
+Route::post('/planning/search/{uuid}', [PlanningController::class, 'searchByFilters']);
 Route::get('/planning/paginate/{uuid}', [PlanningController::class, 'index']);
 Route::post('/planning', [PlanningController::class, 'store']);
 Route::get('/planning/show/{uuid}', [PlanningController::class, 'show']);

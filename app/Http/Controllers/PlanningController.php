@@ -19,6 +19,7 @@ class PlanningController extends Controller
             return Planning::query()
                 ->orderBy('updated_at', 'desc')
                 ->where('user_id', '=', $user_id)
+                ->where('deleted_at', '=', null)
                 ->paginate(5, '*');
         } catch (\Exception $e) {
             return response()->json(['Error to receive values from database', 400]);
@@ -38,6 +39,47 @@ class PlanningController extends Controller
             return Planning::query()->where('uuid', '=', $uuid)->first();
         } catch (\Exception $e) {
             return response()->json(['message' => 'Planning not founded', 'error' => $e], 400);
+        }
+    }
+
+    public function searchByFilters(Request $request, string $uuid)
+    {
+        try {
+            $start_date = $request->input('start_plan');
+            $school_name = $request->input('school_name');
+            $class_name = $request->input('class_name');
+            $planning_type = $request->input('planning_type');
+            $archived = $request->input('archived');
+
+            if (!$start_date || empty($start_date) || is_null($start_date)) $start_date = '';
+            if (!$school_name || empty($school_name) || is_null($school_name)) $school_name = '';
+            if (!$class_name || empty($class_name) || is_null($class_name)) $class_name = '';
+            if (!$planning_type || empty($planning_type) || is_null($planning_type)) $planning_type = '';
+            if (!$archived || empty($archived) || is_null($archived)) $archived = false;
+
+            $plannings = Planning::query()
+                ->orderBy('updated_at', 'desc')
+                ->where('user_id', '=', $uuid)
+                ->where('school_name', 'like', '%' . $school_name . '%')
+                ->where('class_name', 'like', '%' . $class_name . '%')
+                ->where('deleted_at', $archived ? '!=' : '=', null)
+                ->where('start_plan', 'like', '%'.$start_date.'%')
+                ->get()
+                ->toArray();
+
+            $filter = array_filter($plannings, function($planning) use ($planning_type){
+                if ($planning_type == 'Semanal') {
+                    return $planning['start_plan'] !== $planning['end_plan'];
+                } else if ($planning_type == 'Diario') {
+                    return $planning['start_plan'] === $planning['end_plan'];
+                } else {
+                    return true;
+                }
+            });
+
+            return response()->json(array_values($filter));
+        } catch (\Exception $err) {
+            return response()->json(['message' => 'Not possible to find planning with theses criteries', 'error' => $err], 400);
         }
     }
 
@@ -94,7 +136,7 @@ class PlanningController extends Controller
             $request->validate([
                 'document_b64' => ['required', 'string'],
                 'start_plan' => ['required', 'date'],
-                'end_plan' => ['required', 'date', 'after:start_plan'],
+                'end_plan' => ['required', 'date', 'after_or_equal:start_plan'],
                 'school_name' => ['required', 'string'],
                 'class_name' => ['required', 'string'],
                 'user_id' => ['required', 'string', 'uuid']
