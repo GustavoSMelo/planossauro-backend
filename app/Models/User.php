@@ -33,12 +33,12 @@ class User extends Model
         'google_email',
         'github_email',
         'github_id',
+        'github_validation_code',
+        'github_is_validated',
         'full_name',
         'cellphone_number',
-        'validation_code',
         'sms_validation_code',
         'sms_is_validated',
-        'is_validated'
     ];
 
     public static function booted()

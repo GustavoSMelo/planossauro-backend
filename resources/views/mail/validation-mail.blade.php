@@ -21,8 +21,8 @@
     </head>
     <body>
         <div class="bg-gray-200 flex items-center justify-center">
-            <h1 class="text-pink-600">Welcome to Planeja.ai</h1>
-            <p>Para validar seu email e usar 100% de nossa plataforma, insira o codigo de validacao abaixo:</p>
+            <h1 class="text-pink-600">Planeja.ai</h1>
+            <p>Nos estamos feliz por estar utilizando nossa plataforma, o requerido esta logo abaixo</p>
             <h2 class="text-blue-950">{{ $validation_code }}</h2>
         </div>
     </body>
