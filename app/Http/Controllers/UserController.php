@@ -71,6 +71,9 @@ class UserController extends Controller
 
             $githubValidationCode = rand(10000, 99999);
 
+            var_dump($github_email);
+            var_dump($github_id);
+
             $userCreated = User::create([
                 'full_name' => $full_name,
                 'google_email' => $google_email,
@@ -153,6 +156,22 @@ class UserController extends Controller
                 'github_is_validated' => $userFinded->github_email === $request->input('github_email') && $userFinded->github_is_validated ? true : false
             ]);
 
+            if (!empty($github_email)) {
+                Resend::emails()->send([
+                    'from' => 'Acme <onboarding@resend.dev>',
+                    'to' => $github_email,
+                    'subject' => 'Planeja.ai - Validation Code',
+                    'html' => view('mail.validation-mail', ['validation_code' => $userFinded->github_validation_code])->render()
+                ]);
+            } else {
+                Resend::emails()->send([
+                    'from' => 'Acme <onboarding@resend.dev>',
+                    'to' => $request->github_email,
+                    'subject' => 'Planeja.ai - Validation Code',
+                    'html' => view('mail.validation-mail', ['validation_code' => $userFinded->github_validation_code])->render()
+                ]);
+            }
+
             return response()->json([
                 'message' => 'User updated with success',
                 'user' => $userFinded
@@ -181,7 +200,17 @@ class UserController extends Controller
         try {
             return User::query()->where('github_email', '=', $githubEmail)->first();
         } catch (\Exception $e) {
-            return response()->json(['error' => 'User not founded'], 400);
+            return response()->json(['message' => 'User not founded', 'error' => $e], 400);
+        }
+    }
+
+
+    public function findByGoogleEmail(string $googleEmail)
+    {
+        try {
+            return User::query()->where('google_emal', '=', $googleEmail)->first();
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'User not founded', 'error' => $e], 400);
         }
     }
 

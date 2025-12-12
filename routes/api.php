@@ -1,24 +1,28 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-// User routes
+// Health routes
+Route::get('', [HealthController::class, 'check']);
+Route::get('/health', [HealthController::class, 'check']);
 
+// User routes
 Route::get('/user/all', [UserController::class, 'index']);
 Route::post('/user', [UserController::class, 'store']);
 Route::get('/user/{uuid}', [UserController::class, 'show']);
 Route::put('/user/{uuid}', [UserController::class, 'update']);
 Route::delete('/user/{uuid}', [UserController::class, 'destroy']);
 Route::get('/user/github/{githubEmail}', [UserController::class, 'findByGithubEmail']);
+Route::get('/user/google/{googleEmail}', [UserController::class, 'findByGoogleEmail']);
 Route::post('/user/resend/validationcode', [UserController::class, 'resendEmail']);
 Route::patch('/user/validate/github/email/{uuid}', [UserController::class, 'validateGithubEmail']);
 
 // Planning routes
-
 Route::post('/planning/search/{uuid}', [PlanningController::class, 'searchByFilters']);
 Route::get('/planning/paginate/{uuid}', [PlanningController::class, 'index']);
 Route::post('/planning', [PlanningController::class, 'store']);
@@ -29,7 +33,6 @@ Route::patch('/planning/archive/{uuid}', [PlanningController::class, 'archive'])
 Route::patch('/planning/unarchive/{uuid}', [PlanningController::class, 'unarchive']);
 
 // Plans routes
-
 Route::get('/plans', [PlansController::class, 'index']);
 Route::get('/plans/{uuid}', [PlansController::class, 'show']);
 
