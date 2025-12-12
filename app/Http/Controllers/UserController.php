@@ -70,9 +70,7 @@ class UserController extends Controller
             }
 
             $githubValidationCode = rand(10000, 99999);
-
-            var_dump($github_email);
-            var_dump($github_id);
+            $googleValidationCode = rand(10000, 99999);
 
             $userCreated = User::create([
                 'full_name' => $full_name,
@@ -93,16 +91,17 @@ class UserController extends Controller
             } else {
                 Resend::emails()->send([
                     'from' => 'Acme <onboarding@resend.dev>',
-                    'to' => $github_email,
+                    'to' => $google_email,
                     'subject' => 'Planeja.ai - Validation Code',
-                    'html' => view('mail.validation-mail', ['validation_code' => $githubValidationCode])->render()
+                    'html' => view('mail.validation-mail', ['validation_code' => $googleValidationCode])->render()
                 ]);
             }
 
             return response()->json([
                 'message' => 'user created with success',
                 'data' => $userCreated,
-                'github_validation_code' => $githubValidationCode
+                'github_validation_code' => $githubValidationCode,
+                'google_validation_code' => $googleValidationCode
             ], 200);
         } catch (\Exception $err) {
             return response()->json(['error' => 'Malformated or missing values', 'data' => $err], 400);
@@ -208,7 +207,7 @@ class UserController extends Controller
     public function findByGoogleEmail(string $googleEmail)
     {
         try {
-            return User::query()->where('google_emal', '=', $googleEmail)->first();
+            return User::query()->where('google_email', '=', $googleEmail)->first();
         } catch (\Exception $e) {
             return response()->json(['message' => 'User not founded', 'error' => $e], 400);
         }
