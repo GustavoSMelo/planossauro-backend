@@ -30,6 +30,7 @@ class UserController extends Controller
                 'github_email' => ['nullable', 'string', 'email', Rule::unique('user', 'github_email')],
                 'github_id' => ['nullable', 'integer', Rule::unique('user', 'github_id')],
                 'google_email' => ['nullable', 'string', 'email', Rule::unique('user', 'google_email')],
+                'google_id' => ['nullable', 'string', Rule::unique('user', 'google_id')]
             ]);
 
             /**
@@ -43,7 +44,7 @@ class UserController extends Controller
             $github_email = $request->input('github_email');
 
             /**
-             * @var integer | null
+             * @var string | null
              */
             $github_id = $request->input('github_id');
 
@@ -56,6 +57,11 @@ class UserController extends Controller
              * @var string
              */
             $cellphone_number = $request->input('cellphone_number');
+
+            /**
+             * @var integer | null
+             */
+            $google_id = $request->input('google_id');
 
             if ((empty($github_email) || strlen($github_email) <= 0) && (empty($google_email) || strlen($google_email) <= 0)) {
                 return response()->json([
@@ -71,14 +77,18 @@ class UserController extends Controller
 
             $githubValidationCode = rand(10000, 99999);
             $googleValidationCode = rand(10000, 99999);
+            $smsValidationCode = rand(10000, 99999);
 
             $userCreated = User::create([
                 'full_name' => $full_name,
                 'google_email' => $google_email,
                 'github_email' => $github_email,
                 'github_id' => $github_id,
+                'google_id' => $google_id,
                 'cellphone_number' => $cellphone_number,
-                'validation_code' => $githubValidationCode
+                'github_validation_code' => $githubValidationCode,
+                'google_validation_code' => $googleValidationCode,
+                'sms_validation_code' => $smsValidationCode
             ]);
 
             if (!empty($github_email)) {
@@ -100,8 +110,6 @@ class UserController extends Controller
             return response()->json([
                 'message' => 'user created with success',
                 'data' => $userCreated,
-                'github_validation_code' => $githubValidationCode,
-                'google_validation_code' => $googleValidationCode
             ], 200);
         } catch (\Exception $err) {
             return response()->json(['error' => 'Malformated or missing values', 'data' => $err], 400);
@@ -228,7 +236,14 @@ class UserController extends Controller
                     'from' => 'Acme <onboarding@resend.dev>',
                     'to' => $user->github_email,
                     'subject' => 'Planeja.ai - Validation Code',
-                    'html' => view('mail.validation-mail', ['validation_code' => $user->validation_code])->render()
+                    'html' => view('mail.validation-mail', ['validation_code' => $user->github_validation_code])->render()
+                ]);
+            } else {
+                Resend::emails()->send([
+                    'from' => 'Acme <onboarding@resend.dev>',
+                    'to' => $user->google_email,
+                    'subject' => 'Planeja.ai - Validation Code',
+                    'html' => view('mail.validation-mail', ['validation_code' => $user->google_validation_code])->render()
                 ]);
             }
         } catch (\Exception $e) {
@@ -246,6 +261,60 @@ class UserController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'User not founded', 'errorData' => $e], 400);
+        }
+    }
+
+    public function validateGoogleEmail(string $uuid)
+    {
+        try {
+            $userFinded = User::query()->where('uuid', '=', $uuid)->first();
+
+            $userFinded->update([
+                'google_is_validated' => true
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'User not founded', 'errorData' => $e], 400);
+        }
+    }
+
+    public function validate(string $uuid, Request $request)
+    {
+        try {
+            $request->validate([
+                'loginType' => ['required', 'string', 'in:google,github'],
+                'validationCode' => ['required', 'integer']
+            ]);
+
+            /**
+             * @var 'github' | 'google'
+             */
+            $loginType = $request->input('loginType');
+
+            /**
+             * @var string
+             */
+            $validationCode = (int) $request->input('validationCode');
+
+            /**
+             * @var User
+             */
+            $user = User::query()->where('uuid', '=', $uuid)->first();
+
+            if ($loginType === 'github') {
+                if ($validationCode === $user->github_validation_code) {
+                    $this->validateGithubEmail($uuid);
+                    return response()->json(['message' => 'user validated with success'], 200);
+                }
+            } else {
+                if ($validationCode === $user->google_validation_code) {
+                    $this->validateGoogleEmail($uuid);
+                    return response()->json(['message' => 'user validated with success'], 200);
+                }
+            }
+
+            return response()->json(['message' => 'validation code is invalid'], 400);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'missing values or user not found', 'error' => $e], 400);
         }
     }
 }

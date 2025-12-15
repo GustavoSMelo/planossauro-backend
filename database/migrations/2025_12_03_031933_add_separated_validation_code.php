@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('user', function (Blueprint $table) {
             $table->renameColumn('validation_code', 'github_validation_code');
             $table->renameColumn('is_validated', 'github_is_validated');
-            $table->addColumn('integer', 'google_validation_code')->default(rand(10000, 99999));
+            $table->addColumn('integer', 'google_validation_code');
             $table->addColumn('boolean', 'google_is_validated')->default(false);
         });
     }

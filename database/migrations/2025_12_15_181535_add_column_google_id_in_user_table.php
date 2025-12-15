@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('user', function (Blueprint $table) {
-            $table->addColumn('integer', 'sms_validation_code');
-            $table->addColumn('boolean', 'sms_is_validated')->default(false);
+            $table->string('google_id')->nullable();
         });
     }
 
@@ -23,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('user', function (Blueprint $table) {
-            $table->dropColumn('sms_validation_code');
-            $table->dropColumn('sms_is_validated');
+            $table->dropColumn('google_id');
         });
     }
 };

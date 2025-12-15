@@ -21,6 +21,8 @@ Route::get('/user/github/{githubEmail}', [UserController::class, 'findByGithubEm
 Route::get('/user/google/{googleEmail}', [UserController::class, 'findByGoogleEmail']);
 Route::post('/user/resend/validationcode', [UserController::class, 'resendEmail']);
 Route::patch('/user/validate/github/email/{uuid}', [UserController::class, 'validateGithubEmail']);
+Route::patch('/user/validate/google/email/{uuid}', [UserController::class, 'validateGoogleEmail']);
+Route::patch('/user/validate/{uuid}', [UserController::class, 'validate']);
 
 // Planning routes
 Route::post('/planning/search/{uuid}', [PlanningController::class, 'searchByFilters']);

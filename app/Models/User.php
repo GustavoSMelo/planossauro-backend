@@ -23,7 +23,7 @@ class User extends Model
     /**
      * @var bool
      */
-    protected $timestaps = false;
+    protected $timestaps = true;
 
     /**
      * @var array<string, string, string, string>
@@ -39,6 +39,15 @@ class User extends Model
         'cellphone_number',
         'sms_validation_code',
         'sms_is_validated',
+        'google_validation_code',
+        'google_is_validated',
+        'google_id'
+    ];
+
+    protected $hidden = [
+        'github_validation_code',
+        'google_validation_code',
+        'sms_validation_code'
     ];
 
     public static function booted()
