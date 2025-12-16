@@ -151,16 +151,20 @@ class UserController extends Controller
                 ],
                 'google_email' => ['nullable', 'string', 'email', Rule::unique('user', 'google_email')->ignore($uuid, 'uuid')],
                 'github_id' => ['nullable', 'integer', Rule::unique('user', 'github_id')->ignore($uuid, 'uuid')],
+                'google_id' => ['nullable', 'string', Rule::unique('user', 'google_id')->ignore($uuid, 'uuid')]
             ]);
 
             $userFinded->update([
-                'full_name' => $request->full_name,
-                'github_email' => $request->github_email,
-                'google_email' => $request->google_email,
-                'cellphone_number' => $request->cellphone_number,
-                'github_id' => $request->github_id,
+                'full_name' => $request->input('full_name'),
+                'github_email' => $request->input('github_email'),
+                'google_email' => $request->input('google_email'),
+                'cellphone_number' => $request->input('cellphone_number'),
+                'github_id' => $request->input('github_id'),
+                'google_id' => $request->input('google_id'),
                 'github_validation_code' => rand(10000, 99999),
-                'github_is_validated' => $userFinded->github_email === $request->input('github_email') && $userFinded->github_is_validated ? true : false
+                'google_validation_code' => rand(10000, 99999),
+                'github_is_validated' => $userFinded->github_email === $request->input('github_email') && $userFinded->github_is_validated ? true : false,
+                'google_is_validated' => $userFinded->google_email === $request->input('google_email') && $userFinded->google_is_validated ? true : false
             ]);
 
             if (!empty($github_email)) {
@@ -173,9 +177,9 @@ class UserController extends Controller
             } else {
                 Resend::emails()->send([
                     'from' => 'Acme <onboarding@resend.dev>',
-                    'to' => $request->github_email,
+                    'to' => $request->google_email,
                     'subject' => 'Planeja.ai - Validation Code',
-                    'html' => view('mail.validation-mail', ['validation_code' => $userFinded->github_validation_code])->render()
+                    'html' => view('mail.validation-mail', ['validation_code' => $userFinded->google_validation_code])->render()
                 ]);
             }
 
