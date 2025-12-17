@@ -12,27 +12,32 @@ Route::get('', [HealthController::class, 'check']);
 Route::get('/health', [HealthController::class, 'check']);
 
 // User routes
-Route::get('/user/all', [UserController::class, 'index']);
-Route::post('/user', [UserController::class, 'store']);
-Route::get('/user/{uuid}', [UserController::class, 'show']);
-Route::put('/user/{uuid}', [UserController::class, 'update']);
-Route::delete('/user/{uuid}', [UserController::class, 'destroy']);
-Route::get('/user/github/{githubEmail}', [UserController::class, 'findByGithubEmail']);
-Route::get('/user/google/{googleEmail}', [UserController::class, 'findByGoogleEmail']);
-Route::post('/user/resend/validationcode', [UserController::class, 'resendEmail']);
-Route::patch('/user/validate/github/email/{uuid}', [UserController::class, 'validateGithubEmail']);
-Route::patch('/user/validate/google/email/{uuid}', [UserController::class, 'validateGoogleEmail']);
-Route::patch('/user/validate/{uuid}', [UserController::class, 'validate']);
+Route::prefix('user')->group(function () {
+    Route::get('/all', [UserController::class, 'index']);
+    Route::post('', [UserController::class, 'store']);
+    Route::get('/{uuid}', [UserController::class, 'show']);
+    Route::put('/{uuid}', [UserController::class, 'update']);
+    Route::delete('/{uuid}', [UserController::class, 'destroy']);
+    Route::get('/github/{githubEmail}', [UserController::class, 'findByGithubEmail']);
+    Route::get('/google/{googleEmail}', [UserController::class, 'findByGoogleEmail']);
+    Route::post('/resend/validationcode', [UserController::class, 'resendEmail']);
+    Route::patch('/validate/github/email/{uuid}', [UserController::class, 'validateGithubEmail']);
+    Route::patch('/validate/google/email/{uuid}', [UserController::class, 'validateGoogleEmail']);
+    Route::patch('/validate/{uuid}', [UserController::class, 'validate']);
+});
+
 
 // Planning routes
-Route::post('/planning/search/{uuid}', [PlanningController::class, 'searchByFilters']);
-Route::get('/planning/paginate/{uuid}', [PlanningController::class, 'index']);
-Route::post('/planning', [PlanningController::class, 'store']);
-Route::get('/planning/show/{uuid}', [PlanningController::class, 'show']);
-Route::put('/planning/{uuid}', [PlanningController::class, 'update']);
-Route::delete('/planning/{uuid}', [PlanningController::class, 'destroy']);
-Route::patch('/planning/archive/{uuid}', [PlanningController::class, 'archive']);
-Route::patch('/planning/unarchive/{uuid}', [PlanningController::class, 'unarchive']);
+Route::prefix('planning')->group(function () {
+    Route::post('/search/{uuid}', [PlanningController::class, 'searchByFilters']);
+    Route::get('/paginate/{uuid}', [PlanningController::class, 'index']);
+    Route::post('', [PlanningController::class, 'store']);
+    Route::get('/show/{uuid}', [PlanningController::class, 'show']);
+    Route::put('/{uuid}', [PlanningController::class, 'update']);
+    Route::delete('/{uuid}', [PlanningController::class, 'destroy']);
+    Route::patch('/archive/{uuid}', [PlanningController::class, 'archive']);
+    Route::patch('/unarchive/{uuid}', [PlanningController::class, 'unarchive']);
+});
 
 // Plans routes
 Route::get('/plans', [PlansController::class, 'index']);

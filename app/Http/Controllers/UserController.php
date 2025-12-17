@@ -286,7 +286,7 @@ class UserController extends Controller
         try {
             $request->validate([
                 'loginType' => ['required', 'string', 'in:google,github'],
-                'validationCode' => ['required', 'integer']
+                'validationCode' => ['required', 'string']
             ]);
 
             /**
@@ -297,7 +297,7 @@ class UserController extends Controller
             /**
              * @var string
              */
-            $validationCode = (int) $request->input('validationCode');
+            $validationCode = $request->input('validationCode');
 
             /**
              * @var User
@@ -305,12 +305,12 @@ class UserController extends Controller
             $user = User::query()->where('uuid', '=', $uuid)->first();
 
             if ($loginType === 'github') {
-                if ($validationCode === $user->github_validation_code) {
+                if ((int) $validationCode == $user->github_validation_code) {
                     $this->validateGithubEmail($uuid);
                     return response()->json(['message' => 'user validated with success'], 200);
                 }
             } else {
-                if ($validationCode === $user->google_validation_code) {
+                if ($validationCode == $user->google_validation_code) {
                     $this->validateGoogleEmail($uuid);
                     return response()->json(['message' => 'user validated with success'], 200);
                 }
