@@ -93,14 +93,14 @@ class UserController extends Controller
 
             if (!empty($github_email)) {
                 Resend::emails()->send([
-                    'from' => 'Acme <onboarding@resend.dev>',
+                    'from' => config('services.resend.name') . '<' . config('services.resend.mail') . '>',
                     'to' => $github_email,
                     'subject' => 'Planeja.ai - Validation Code',
                     'html' => view('mail.validation-mail', ['validation_code' => $githubValidationCode])->render()
                 ]);
             } else {
                 Resend::emails()->send([
-                    'from' => 'Acme <onboarding@resend.dev>',
+                    'from' => config('services.resend.name') . '<' . config('services.resend.mail') . '>',
                     'to' => $google_email,
                     'subject' => 'Planeja.ai - Validation Code',
                     'html' => view('mail.validation-mail', ['validation_code' => $googleValidationCode])->render()
@@ -169,14 +169,14 @@ class UserController extends Controller
 
             if (!empty($github_email)) {
                 Resend::emails()->send([
-                    'from' => 'Acme <onboarding@resend.dev>',
+                    'from' => config('services.resend.name') . '<' . config('services.resend.mail') . '>',
                     'to' => $github_email,
                     'subject' => 'Planeja.ai - Validation Code',
                     'html' => view('mail.validation-mail', ['validation_code' => $userFinded->github_validation_code])->render()
                 ]);
             } else {
                 Resend::emails()->send([
-                    'from' => 'Acme <onboarding@resend.dev>',
+                    'from' => config('services.resend.name') . '<' . config('services.resend.mail') . '>',
                     'to' => $request->google_email,
                     'subject' => 'Planeja.ai - Validation Code',
                     'html' => view('mail.validation-mail', ['validation_code' => $userFinded->google_validation_code])->render()
@@ -237,14 +237,14 @@ class UserController extends Controller
 
             if ($request->input('loginType') === 'github') {
                 Resend::emails()->send([
-                    'from' => 'Acme <onboarding@resend.dev>',
+                    'from' => config('services.resend.name') . '<' . config('services.resend.mail') . '>',
                     'to' => $user->github_email,
                     'subject' => 'Planeja.ai - Validation Code',
                     'html' => view('mail.validation-mail', ['validation_code' => $user->github_validation_code])->render()
                 ]);
             } else {
                 Resend::emails()->send([
-                    'from' => 'Acme <onboarding@resend.dev>',
+                    'from' => config('services.resend.name') . '<' . config('services.resend.mail') . '>',
                     'to' => $user->google_email,
                     'subject' => 'Planeja.ai - Validation Code',
                     'html' => view('mail.validation-mail', ['validation_code' => $user->google_validation_code])->render()
