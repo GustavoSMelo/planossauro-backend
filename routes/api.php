@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,7 +27,6 @@ Route::prefix('user')->group(function () {
     Route::patch('/validate/{uuid}', [UserController::class, 'validate']);
 });
 
-
 // Planning routes
 Route::prefix('planning')->group(function () {
     Route::post('/search/{uuid}', [PlanningController::class, 'searchByFilters']);
@@ -42,6 +42,12 @@ Route::prefix('planning')->group(function () {
 // Plans routes
 Route::get('/plans', [PlansController::class, 'index']);
 Route::get('/plans/{uuid}', [PlansController::class, 'show']);
+
+Route::prefix('subscription')->group(function () {
+    Route::post('/assign/free/{userId}', [SubscriptionController::class, 'assignFreePlanToUser']);
+    Route::post('/assign/{userId}', [SubscriptionController::class, 'assignPlanToUser']);
+    Route::put('/assign/update/{userId}', [SubscriptionController::class, 'assignPlanToUser']);
+});
 
 // Auth routes
 Route::get('/auth/github/{code}', [AuthController::class, 'githubAuth']);

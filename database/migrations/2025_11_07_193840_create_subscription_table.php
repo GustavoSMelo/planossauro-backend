@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_plans', function (Blueprint $table) {
+        Schema::create('subscription', function (Blueprint $table) {
             $table->uuid()->primary();
-            $table->integer('amount_used');
-            $table->date('date_verified');
-            $table->date('date_renewal');
+            $table->integer('daily_plans_used');
+            $table->integer('weekly_plans_used');
+            $table->date('date_verified')->nullable();
+            $table->date('next_billing')->nullable();
+            $table->string('status');
+            $table->integer('last_four_digits')->nullable();
             $table->timestamps();
 
             $table->foreignUuid('user_id')->references('uuid')->on('user');
@@ -28,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_plans');
+        Schema::dropIfExists('subscription');
     }
 };

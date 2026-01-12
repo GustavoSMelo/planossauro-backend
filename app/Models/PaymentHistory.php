@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-class Plans extends Model
+class PaymentHistory extends Model
 {
     use HasUuids;
 
@@ -17,12 +17,12 @@ class Plans extends Model
     /**
      * @var string
      */
-    protected $table = 'plans';
+    protected $table = 'payment_history';
 
     /**
-     * @var bool
+     * @var boolean
      */
     public $timestamps = true;
 
-    protected $fillable = ['plan_name', 'price', 'amount_planning_month', 'amounth_planning_week', 'has_cloud_save'];
+    protected $fillable = ['payment_date', 'description', 'card_brand', 'last_four_digits', 'price', 'status', 'plan_id'];
 }

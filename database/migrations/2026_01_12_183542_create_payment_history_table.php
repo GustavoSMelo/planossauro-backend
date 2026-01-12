@@ -11,13 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('plans', function (Blueprint $table) {
+        Schema::create('payment_history', function (Blueprint $table) {
             $table->uuid()->primary();
-            $table->string('plan_name');
+            $table->date('payment_date');
+            $table->string('description');
+            $table->string('card_brand');
+            $table->integer('last_four_digits');
             $table->float('price');
-            $table->integer('amount_planning_month');
-            $table->integer('amount_planning_week');
+            $table->string('status');
             $table->timestamps();
+
+            $table->foreignUuid('plan_id')->references('uuid')->on('plans');
         });
     }
 
@@ -26,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('plans');
+        Schema::dropIfExists('payment_history');
     }
 };

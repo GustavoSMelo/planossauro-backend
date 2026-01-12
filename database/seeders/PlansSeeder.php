@@ -15,14 +15,24 @@ class PlansSeeder extends Seeder
         Plans::query()->create([
             'price' => 0,
             'plan_name' => 'free',
-            'amount_planning' => 5,
+            'amount_planning_month' => 3,
+            'amount_planning_week' => 3,
             'has_cloud_save' => true,
         ]);
 
         Plans::query()->create([
-            'price' => 5,
+            'price' => 9.99,
+            'plan_name' => 'essencial',
+            'amount_planning_month' => 10,
+            'amount_planning_week' => 10,
+            'has_cloud_save' => true
+        ]);
+
+        Plans::query()->create([
+            'price' => 14.99,
             'plan_name' => 'premium',
-            'amount_planning' => 10,
+            'amount_planning_month' => 50,
+            'amount_planning_week' => 50,
             'has_cloud_save' => true
         ]);
     }
