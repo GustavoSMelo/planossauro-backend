@@ -21,8 +21,8 @@ return new class extends Migration
             $table->integer('last_four_digits')->nullable();
             $table->timestamps();
 
-            $table->foreignUuid('user_id')->references('uuid')->on('user');
-            $table->foreignUuid('plans_id')->references('uuid')->on('plans');
+            $table->foreignUuid('user_id')->unique()->references('uuid')->on('user');
+            $table->foreignUuid('plans_id')->unique()->references('uuid')->on('plans');
         });
     }
 

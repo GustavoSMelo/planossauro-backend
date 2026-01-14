@@ -24,5 +24,5 @@ class PaymentHistory extends Model
      */
     public $timestamps = true;
 
-    protected $fillable = ['payment_date', 'description', 'card_brand', 'last_four_digits', 'price', 'status', 'plan_id'];
+    protected $fillable = ['payment_date', 'description', 'card_brand', 'last_four_digits', 'price', 'status', 'plan_id', 'user_id', 'NFe'];
 }

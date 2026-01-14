@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Resend\Laravel\Facades\Resend;
 
@@ -24,13 +25,18 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            $request->validate([
+            $validator = Validator::make($request->all(),[
                 'full_name' => ['required', 'string', 'max:255', 'min:3'],
                 'cellphone_number' => ['required', 'string', 'max:15', 'min:11'],
                 'github_email' => ['nullable', 'string', 'email', Rule::unique('user', 'github_email')],
                 'github_id' => ['nullable', 'integer', Rule::unique('user', 'github_id')],
                 'google_email' => ['nullable', 'string', 'email', Rule::unique('user', 'google_email')],
                 'google_id' => ['nullable', 'string', Rule::unique('user', 'google_id')]
+            ]);
+
+            if ($validator->fails()) return response()->json([
+                'message' => 'Error on validation code',
+                'errors' => $validator->errors()
             ]);
 
             /**

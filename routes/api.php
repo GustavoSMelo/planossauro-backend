@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\SubscriptionController;
@@ -40,13 +41,28 @@ Route::prefix('planning')->group(function () {
 });
 
 // Plans routes
-Route::get('/plans', [PlansController::class, 'index']);
-Route::get('/plans/{uuid}', [PlansController::class, 'show']);
+Route::prefix('plans')->group(function () {
+    Route::get('/', [PlansController::class, 'index']);
+    Route::get('/{uuid}', [PlansController::class, 'show']);
+});
 
+// Subscription routes
 Route::prefix('subscription')->group(function () {
     Route::post('/assign/free/{userId}', [SubscriptionController::class, 'assignFreePlanToUser']);
     Route::post('/assign/{userId}', [SubscriptionController::class, 'assignPlanToUser']);
-    Route::put('/assign/update/{userId}', [SubscriptionController::class, 'assignPlanToUser']);
+    Route::put('/{userId}', [SubscriptionController::class, 'assignPlanToUser']);
+    Route::patch('/status/update/{subscriptionId}', [SubscriptionController::class, 'patchPlanStatus']);
+    Route::get('/{userId}', [SubscriptionController::class, 'show']);
+});
+
+// Payment history routes
+Route::prefix('payment/history')->group(function () {
+    Route::get('/{userId}', [PaymentHistoryController::class, 'show']);
+    Route::post('/', [PaymentHistoryController::class, 'store']);
+    Route::put('/{paymentId}', [PaymentHistoryController::class, 'update']);
+
+    Route::patch('/upload/nfe/{paymentId}', [PaymentHistoryController::class, 'insertNFe']);
+    Route::patch('/status/update/{paymentId}', [PaymentHistoryController::class, 'updatePaymentStatus']);
 });
 
 // Auth routes

@@ -19,9 +19,11 @@ return new class extends Migration
             $table->integer('last_four_digits');
             $table->float('price');
             $table->string('status');
+            $table->string('NFe')->nullable()->default(null);
             $table->timestamps();
 
             $table->foreignUuid('plan_id')->references('uuid')->on('plans');
+            $table->foreignUuid('user_id')->references('uuid')->on('user');
         });
     }
 
