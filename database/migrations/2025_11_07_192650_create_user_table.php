@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid()->primary();
             $table->string('google_email')->nullable()->unique();
             $table->string('github_email')->nullable()->unique();
-            $table->string('cellphone_number');
+            $table->string('cellphone_number')->unique();
             $table->string('full_name');
             $table->timestamps();
         });

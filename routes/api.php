@@ -66,4 +66,6 @@ Route::prefix('payment/history')->group(function () {
 });
 
 // Auth routes
-Route::get('/auth/github/{code}', [AuthController::class, 'githubAuth']);
+Route::get('/token/github/{code}', [AuthController::class, 'githubAccessToken']);
+Route::get('/auth/github/{token}', [AuthController::class, 'githubAuth']);
+Route::get('/auth/google/{token}', [AuthController::class, 'googleAuth']);
