@@ -25,7 +25,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(),[
+            $validator = Validator::make($request->all(), [
                 'full_name' => ['required', 'string', 'max:255', 'min:3'],
                 'cellphone_number' => ['required', 'string', 'max:15', 'min:11'],
                 'github_email' => ['nullable', 'string', 'email', Rule::unique('user', 'github_email')],
@@ -125,10 +125,10 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $uuid): JsonResponse | User
+    public function show(string $userUUID): JsonResponse | User
     {
         try {
-            return User::query()->where('uuid', '=', $uuid)->first();
+            return User::query()->where('uuid', '=', $userUUID)->first();
         } catch (\Exception $e) {
             return response()->json(['error' => 'User not founded'], 400);
         }
@@ -137,10 +137,10 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $uuid)
+    public function update(Request $request, string $userUUID)
     {
         try {
-            $userFinded = User::query()->where('uuid', '=', $uuid)->first();
+            $userFinded = User::query()->where('uuid', '=', $userUUID)->first();
 
             if (empty($userFinded) || $userFinded === null) {
                 return response()->json('User not founded', 400);
@@ -153,11 +153,11 @@ class UserController extends Controller
                     'nullable',
                     'string',
                     'email',
-                    Rule::unique('user', 'github_email')->ignore($uuid, 'uuid')
+                    Rule::unique('user', 'github_email')->ignore($userUUID, 'uuid')
                 ],
-                'google_email' => ['nullable', 'string', 'email', Rule::unique('user', 'google_email')->ignore($uuid, 'uuid')],
-                'github_id' => ['nullable', 'integer', Rule::unique('user', 'github_id')->ignore($uuid, 'uuid')],
-                'google_id' => ['nullable', 'string', Rule::unique('user', 'google_id')->ignore($uuid, 'uuid')]
+                'google_email' => ['nullable', 'string', 'email', Rule::unique('user', 'google_email')->ignore($userUUID, 'uuid')],
+                'github_id' => ['nullable', 'integer', Rule::unique('user', 'github_id')->ignore($userUUID, 'uuid')],
+                'google_id' => ['nullable', 'string', Rule::unique('user', 'google_id')->ignore($userUUID, 'uuid')]
             ]);
 
             $userFinded->update([
@@ -201,10 +201,10 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $uuid)
+    public function destroy(string $userUUID)
     {
         try {
-            User::query()->delete($uuid);
+            User::query()->delete($userUUID);
 
             return response()->json(['message' => 'User deleted with success'], 400);
         } catch (\Exception $e) {
@@ -261,10 +261,10 @@ class UserController extends Controller
         }
     }
 
-    public function validateGithubEmail(string $uuid)
+    public function validateGithubEmail(string $userUUID)
     {
         try {
-            $userFinded = User::query()->where('uuid', '=', $uuid)->first();
+            $userFinded = User::query()->where('uuid', '=', $userUUID)->first();
 
             $userFinded->update([
                 'github_is_validated' => true
@@ -274,10 +274,10 @@ class UserController extends Controller
         }
     }
 
-    public function validateGoogleEmail(string $uuid)
+    public function validateGoogleEmail(string $userUUID)
     {
         try {
-            $userFinded = User::query()->where('uuid', '=', $uuid)->first();
+            $userFinded = User::query()->where('uuid', '=', $userUUID)->first();
 
             $userFinded->update([
                 'google_is_validated' => true
@@ -287,7 +287,7 @@ class UserController extends Controller
         }
     }
 
-    public function validate(string $uuid, Request $request)
+    public function validate(string $userUUID, Request $request)
     {
         try {
             $request->validate([
@@ -308,16 +308,16 @@ class UserController extends Controller
             /**
              * @var User
              */
-            $user = User::query()->where('uuid', '=', $uuid)->first();
+            $user = User::query()->where('uuid', '=', $userUUID)->first();
 
             if ($loginType === 'github') {
                 if ((int) $validationCode == $user->github_validation_code) {
-                    $this->validateGithubEmail($uuid);
+                    $this->validateGithubEmail($userUUID);
                     return response()->json(['message' => 'user validated with success'], 200);
                 }
             } else {
                 if ($validationCode == $user->google_validation_code) {
-                    $this->validateGoogleEmail($uuid);
+                    $this->validateGoogleEmail($userUUID);
                     return response()->json(['message' => 'user validated with success'], 200);
                 }
             }

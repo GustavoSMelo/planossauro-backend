@@ -65,9 +65,9 @@ class PaymentHistoryController extends Controller
         }
     }
 
-    public function show(string $userId)
+    public function show(string $userUUID)
     {
-        $payments = PaymentHistory::query()->where('user_id', '=', $userId)->get();
+        $payments = PaymentHistory::query()->where('user_id', '=', $userUUID)->get();
 
         return response()->json([
             'payments' => $payments

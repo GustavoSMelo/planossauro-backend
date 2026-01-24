@@ -11,14 +11,14 @@ class PlanningController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * @param string $user_id
+     * @param string $userUUID
      */
-    public function index(string $user_id)
+    public function index(string $userUUID)
     {
         try {
             return Planning::query()
                 ->orderBy('updated_at', 'desc')
-                ->where('user_id', '=', $user_id)
+                ->where('user_id', '=', $userUUID)
                 ->where('deleted_at', '=', null)
                 ->paginate(5, '*');
         } catch (\Exception $e) {
@@ -42,7 +42,7 @@ class PlanningController extends Controller
         }
     }
 
-    public function searchByFilters(Request $request, string $uuid)
+    public function searchByFilters(Request $request, string $userUUID)
     {
         try {
             $start_date = $request->input('start_plan');
@@ -59,7 +59,7 @@ class PlanningController extends Controller
 
             $plannings = Planning::query()
                 ->orderBy('updated_at', 'desc')
-                ->where('user_id', '=', $uuid)
+                ->where('user_id', '=', $userUUID)
                 ->where('school_name', 'like', '%' . $school_name . '%')
                 ->where('class_name', 'like', '%' . $class_name . '%')
                 ->where('deleted_at', $archived ? '!=' : '=', null)

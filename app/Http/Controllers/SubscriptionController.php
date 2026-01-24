@@ -12,13 +12,13 @@ use Illuminate\Validation\Rule;
 
 class SubscriptionController extends Controller
 {
-    public function assignFreePlanToUser(string $userId)
+    public function assignFreePlanToUser(string $userUUID)
     {
-        $user = User::query()->where('uuid', '=', $userId)->first();
+        $user = User::query()->where('uuid', '=', $userUUID)->first();
         if (!$user) return response()->json(['message' => 'User with this is does not exists'], 404);
 
         $plans = Plans::query()->where('price', '=', 0)->first();
-        $subscription = Subscription::query()->where('user_id', '=', $userId)->first();
+        $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
 
         if ($subscription) {
             $subscription->update([
@@ -50,7 +50,7 @@ class SubscriptionController extends Controller
         return response()->json(['Plan assigned with success']);
     }
 
-    public function assignPlanToUser(string $userId, Request $request)
+    public function assignPlanToUser(string $userUUID, Request $request)
     {
         $validator = Validator::make($request->all(), [
             'plans_id' => ['string', 'required', 'uuid', 'exists:plans,uuid'],
@@ -71,7 +71,7 @@ class SubscriptionController extends Controller
         $nextBilling = $request->input('next_billing');
         $dateVerified = $request->input('date_verified');
 
-        $subscription = Subscription::query()->where('user_id', '=', $userId)->first();
+        $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
 
         if ($subscription) {
             $subscription->update([
@@ -79,7 +79,7 @@ class SubscriptionController extends Controller
                 'date_verified' => $dateVerified,
                 'last_four_digits' => $lastFourDigits,
                 'plans_id' => $plansId,
-                'user_id' => $userId,
+                'user_id' => $userUUID,
                 'daily_plans_used' => 0,
                 'weekly_plans_used' => 0,
                 'status' => PlanStatus::PROCESSING
@@ -96,7 +96,7 @@ class SubscriptionController extends Controller
             'date_verified' => $dateVerified,
             'last_four_digits' => $lastFourDigits,
             'plans_id' => $plansId,
-            'user_id' => $userId,
+            'user_id' => $userUUID,
             'daily_plans_used' => 0,
             'weekly_plans_used' => 0,
             'status' => PlanStatus::PROCESSING
@@ -155,9 +155,9 @@ class SubscriptionController extends Controller
         return response()->json(['message' => 'subscription status updated with success']);
     }
 
-    public function show(string $userId)
+    public function show(string $userUUID)
     {
-        $subscription = Subscription::query()->where('user_id', '=', $userId)->first();
+        $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
 
         return response()->json(['subscription' => $subscription]);
     }

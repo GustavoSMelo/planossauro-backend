@@ -3,10 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -65,6 +62,7 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $user->tokens()->delete();
         $sactumToken = $user->createToken('auth');
 
         return response()->json([
@@ -96,6 +94,7 @@ class AuthController extends Controller
                 ], 401);
             }
 
+            $user->tokens()->delete();
             $sactumToken = $user->createToken('auth');
 
             return response()->json([
@@ -107,6 +106,23 @@ class AuthController extends Controller
 
             return response()->json([
                 'message' => 'Unauthenticated',
+                'error' => $e
+            ], 401);
+        }
+    }
+
+    public function logout(String $userUUID)
+    {
+        try {
+            $user = User::query()->where('uuid', '=', $userUUID)->first();
+
+            $user->tokens()->delete();
+            return response()->json([
+                'message' => 'User logout with success'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error',
                 'error' => $e
             ], 401);
         }
