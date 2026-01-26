@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
-class ValidateUserToken
+class ValidateUserTokenByRoute
 {
     /**
      * Handle an incoming request.
@@ -17,10 +17,11 @@ class ValidateUserToken
     public function handle(Request $request, Closure $next): Response
     {
         $tokenWithBearer = $request->header('Authorization');
+
         $token = explode(' ', $tokenWithBearer)[1];
         $user = PersonalAccessToken::findToken($token)->tokenable;
 
-        $requestUUID = $request->route('uuid');
+        $requestUUID = $request->route('userUUID');
 
         if ($requestUUID === $user->uuid) {
             return $next($request);
