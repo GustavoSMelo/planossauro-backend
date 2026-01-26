@@ -7,7 +7,16 @@ use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
-use App\Http\Middleware\ValidateUserToken;
+
+use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
+use App\Http\Middleware\Planning\ValidatePlanningID;
+use App\Http\Middleware\Planning\ValidateSubscriptionID;
+use App\Http\Middleware\ValidateUserTokenByBody;
+use App\Http\Middleware\ValidateUserTokenByBodyGithubAccount;
+use App\Http\Middleware\ValidateUserTokenByBodyGoogleAccount;
+use App\Http\Middleware\ValidateUserTokenByBodyUserID;
+use App\Http\Middleware\ValidateUserTokenByRoute;
+
 use Illuminate\Support\Facades\Route;
 
 // Health routes
@@ -19,50 +28,69 @@ Route::prefix('user')->group(function () {
     Route::get('/all', [UserController::class, 'index']);
 
     Route::post('', [UserController::class, 'store']);
+
     Route::get('/{userUUID}', [UserController::class, 'show'])
         ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
     Route::put('/{userUUID}', [UserController::class, 'update'])
         ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
     Route::delete('/{userUUID}', [UserController::class, 'destroy'])
         ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
-    Route::get('/github/{githubEmail}', [UserController::class, 'findByGithubEmail']);
-    Route::get('/google/{googleEmail}', [UserController::class, 'findByGoogleEmail']);
-    Route::post('/resend/validationcode', [UserController::class, 'resendEmail']);
+    Route::get('/github/{githubEmail}', [UserController::class, 'findByGithubEmail'])
+        ->middleware('auth:sanctum')
+        ->middleware(ValidateUserTokenByBodyGithubAccount::class);
+
+    Route::get('/google/{googleEmail}', [UserController::class, 'findByGoogleEmail'])
+        ->middleware('auth:sanctum')
+        ->middleware(ValidateUserTokenByBodyGoogleAccount::class);
+
+    Route::post('/resend/validationcode', [UserController::class, 'resendEmail'])
+        ->middleware('auth:sanctum')
+        ->middleware(ValidateUserTokenByBody::class);
+
     Route::patch('/validate/github/email/{userUUID}', [UserController::class, 'validateGithubEmail'])
         ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
     Route::patch('/validate/google/email/{userUUID}', [UserController::class, 'validateGoogleEmail'])
         ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
     Route::patch('/validate/{userUUID}', [UserController::class, 'validate'])
         ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 });
 
 // Planning routes
-Route::prefix('planning')->group(function () {
+Route::prefix('planning')->middleware('auth:sanctum')->group(function () {
     Route::post('/search/{userUUID}', [PlanningController::class, 'searchByFilters'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
     Route::get('/paginate/{userUUID}', [PlanningController::class, 'index'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
-    Route::post('', [PlanningController::class, 'store']);
-    Route::get('/show/{uuid}', [PlanningController::class, 'show']);
-    Route::put('/{uuid}', [PlanningController::class, 'update']);
-    Route::delete('/{uuid}', [PlanningController::class, 'destroy']);
-    Route::patch('/archive/{uuid}', [PlanningController::class, 'archive']);
-    Route::patch('/unarchive/{uuid}', [PlanningController::class, 'unarchive']);
+    Route::post('', [PlanningController::class, 'store'])
+        ->middleware(ValidateUserTokenByBody::class);
+
+    Route::get('/show/{uuid}', [PlanningController::class, 'show'])
+        ->middleware(ValidatePlanningID::class);
+
+    Route::put('/{uuid}', [PlanningController::class, 'update'])
+        ->middleware(ValidateUserTokenByBodyUserID::class);
+
+    Route::delete('/{uuid}', [PlanningController::class, 'destroy'])
+        ->middleware(ValidatePlanningID::class);
+
+    Route::patch('/archive/{uuid}', [PlanningController::class, 'archive'])
+        ->middleware(ValidatePlanningID::class);
+
+    Route::patch('/unarchive/{uuid}', [PlanningController::class, 'unarchive'])
+        ->middleware(ValidatePlanningID::class);
 });
 
 // Plans routes
@@ -72,42 +100,44 @@ Route::prefix('plans')->group(function () {
 });
 
 // Subscription routes
-Route::prefix('subscription')->group(function () {
+Route::prefix('subscription')->middleware('auth:sanctum')->group(function () {
     Route::post('/assign/free/{userUUID}', [SubscriptionController::class, 'assignFreePlanToUser'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
     Route::post('/assign/{userUUID}', [SubscriptionController::class, 'assignPlanToUser'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
-
+        ->middleware(ValidateUserTokenByRoute::class);
 
     Route::put('/{userUUID}', [SubscriptionController::class, 'assignPlanToUser'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
+    Route::patch('/status/update/{subscriptionId}', [SubscriptionController::class, 'patchPlanStatus'])
+        ->middleware(ValidateSubscriptionID::class);
 
-    Route::patch('/status/update/{subscriptionId}', [SubscriptionController::class, 'patchPlanStatus']);
     Route::get('/{userUUID}', [SubscriptionController::class, 'show'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 });
 
 // Payment history routes
-Route::prefix('payment/history')->group(function () {
+Route::prefix('payment/history')->middleware('auth:sanctum')->group(function () {
     Route::get('/{userUUID}', [PaymentHistoryController::class, 'show'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserToken::class);
+        ->middleware(ValidateUserTokenByRoute::class);
 
-    Route::post('/', [PaymentHistoryController::class, 'store']);
-    Route::put('/{paymentId}', [PaymentHistoryController::class, 'update']);
+    Route::post('/', [PaymentHistoryController::class, 'store'])
+        ->middleware(ValidateUserTokenByBody::class);
 
-    Route::patch('/upload/nfe/{paymentId}', [PaymentHistoryController::class, 'insertNFe']);
-    Route::patch('/status/update/{paymentId}', [PaymentHistoryController::class, 'updatePaymentStatus']);
+    Route::put('/{paymentId}', [PaymentHistoryController::class, 'update'])
+        ->middleware(ValidateUserTokenByBody::class);
+
+    Route::patch('/upload/nfe/{paymentId}', [PaymentHistoryController::class, 'insertNFe'])
+        ->middleware(ValidatePaymentHistoryID::class);
+
+    Route::patch('/status/update/{paymentId}', [PaymentHistoryController::class, 'updatePaymentStatus'])
+        ->middleware(ValidatePaymentHistoryID::class);
 });
 
 // Auth routes
 Route::get('/token/github/{code}', [AuthController::class, 'githubAccessToken']);
 Route::get('/auth/github/{token}', [AuthController::class, 'githubAuth']);
 Route::get('/auth/google/{token}', [AuthController::class, 'googleAuth']);
-Route::delete('/logout/{userUUID}', [AuthController::class, 'logout'])->middleware('auth:sactum');
+Route::delete('/logout/{userUUID}', [AuthController::class, 'logout'])
+    ->middleware('auth:sactum');
