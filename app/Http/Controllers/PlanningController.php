@@ -6,6 +6,7 @@ use App\Models\Planning;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Validator;
 
 class PlanningController extends Controller
 {
@@ -63,11 +64,11 @@ class PlanningController extends Controller
                 ->where('school_name', 'like', '%' . $school_name . '%')
                 ->where('class_name', 'like', '%' . $class_name . '%')
                 ->where('deleted_at', $archived ? '!=' : '=', null)
-                ->where('start_plan', 'like', '%'.$start_date.'%')
+                ->where('start_plan', 'like', '%' . $start_date . '%')
                 ->get()
                 ->toArray();
 
-            $filter = array_filter($plannings, function($planning) use ($planning_type){
+            $filter = array_filter($plannings, function ($planning) use ($planning_type) {
                 if ($planning_type == 'Semanal') {
                     return $planning['start_plan'] !== $planning['end_plan'];
                 } else if ($planning_type == 'Diario') {
@@ -89,7 +90,7 @@ class PlanningController extends Controller
     public function store(Request $request)
     {
         try {
-            $request->validate([
+            $validator = Validator::make($request->all(), [
                 'document_b64' => ['required', 'string'],
                 'start_plan' => ['required', 'date'],
                 'end_plan' => ['required', 'date', 'after_or_equal:start_plan'],
@@ -97,6 +98,13 @@ class PlanningController extends Controller
                 'class_name' => ['required', 'string'],
                 'user_id' => ['required', 'string', 'uuid']
             ]);
+
+            if ($validator->failed()) {
+                return response()->json([
+                    'message' => 'validation failed',
+                    'error' => $validator->errors()
+                ], 400);
+            }
 
             $user_id = $request->input('user_id');
 

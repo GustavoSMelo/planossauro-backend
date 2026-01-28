@@ -12,11 +12,8 @@ use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
 use App\Http\Middleware\Planning\ValidatePlanningID;
 use App\Http\Middleware\Planning\ValidateSubscriptionID;
 use App\Http\Middleware\ValidateUserTokenByBody;
-use App\Http\Middleware\ValidateUserTokenByBodyGithubAccount;
-use App\Http\Middleware\ValidateUserTokenByBodyGoogleAccount;
 use App\Http\Middleware\ValidateUserTokenByBodyUserID;
 use App\Http\Middleware\ValidateUserTokenByRoute;
-
 use Illuminate\Support\Facades\Route;
 
 // Health routes
@@ -41,25 +38,13 @@ Route::prefix('user')->group(function () {
         ->middleware('auth:sanctum')
         ->middleware(ValidateUserTokenByRoute::class);
 
-    Route::get('/github/{githubEmail}', [UserController::class, 'findByGithubEmail'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserTokenByBodyGithubAccount::class);
+    Route::get('/github/{githubEmail}', [UserController::class, 'findByGithubEmail']);
 
-    Route::get('/google/{googleEmail}', [UserController::class, 'findByGoogleEmail'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserTokenByBodyGoogleAccount::class);
+    Route::get('/google/{googleEmail}', [UserController::class, 'findByGoogleEmail']);
 
     Route::post('/resend/validationcode', [UserController::class, 'resendEmail'])
         ->middleware('auth:sanctum')
         ->middleware(ValidateUserTokenByBody::class);
-
-    Route::patch('/validate/github/email/{userUUID}', [UserController::class, 'validateGithubEmail'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserTokenByRoute::class);
-
-    Route::patch('/validate/google/email/{userUUID}', [UserController::class, 'validateGoogleEmail'])
-        ->middleware('auth:sanctum')
-        ->middleware(ValidateUserTokenByRoute::class);
 
     Route::patch('/validate/{userUUID}', [UserController::class, 'validate'])
         ->middleware('auth:sanctum')

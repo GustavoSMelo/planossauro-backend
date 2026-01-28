@@ -146,7 +146,7 @@ class UserController extends Controller
                 return response()->json('User not founded', 400);
             }
 
-            $request->validate([
+            $validate = Validator::make($request->all(), [
                 'full_name' => ['required', 'string', 'max:255', 'min:3'],
                 'cellphone_number' => ['required', 'string', 'max:15', 'min:11'],
                 'github_email' => [
@@ -159,6 +159,13 @@ class UserController extends Controller
                 'github_id' => ['nullable', 'integer', Rule::unique('user', 'github_id')->ignore($userUUID, 'uuid')],
                 'google_id' => ['nullable', 'string', Rule::unique('user', 'google_id')->ignore($userUUID, 'uuid')]
             ]);
+
+            if ($validate->failed()) {
+                return response()->json([
+                    'Message' => 'validation failed',
+                    'Errors' => $validate->errors()
+                ], 400);
+            }
 
             $userFinded->update([
                 'full_name' => $request->input('full_name'),
@@ -206,7 +213,7 @@ class UserController extends Controller
         try {
             User::query()->delete($userUUID);
 
-            return response()->json(['message' => 'User deleted with success'], 400);
+            return response()->json(['message' => 'User deleted with success']);
         } catch (\Exception $e) {
             return response(['error' => 'User not founded'], 400);
         }
@@ -234,10 +241,17 @@ class UserController extends Controller
     public function resendEmail(Request $request)
     {
         try {
-            $request->validate([
+            $validator = Validator::make($request->all(), [
                 'uuid' => ['required', 'uuid', 'string'],
                 'loginType' => ['required', 'string']
             ]);
+
+            if ($validator->failed()) {
+                return response()->json([
+                    'Message' => 'validation failed',
+                    'Errors' => $validator->errors()
+                ], 400);
+            }
 
             $user = User::query()->where('uuid', '=', $request->input('uuid'))->first();
 
@@ -265,9 +279,12 @@ class UserController extends Controller
     {
         try {
             $userFinded = User::query()->where('uuid', '=', $userUUID)->first();
-
             $userFinded->update([
                 'github_is_validated' => true
+            ]);
+
+            return response()->json([
+                'message' => 'github validated with success'
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'User not founded', 'errorData' => $e], 400);
@@ -278,9 +295,12 @@ class UserController extends Controller
     {
         try {
             $userFinded = User::query()->where('uuid', '=', $userUUID)->first();
-
             $userFinded->update([
                 'google_is_validated' => true
+            ]);
+
+            return response()->json([
+                'message' => 'gmail validated with success'
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'User not founded', 'errorData' => $e], 400);

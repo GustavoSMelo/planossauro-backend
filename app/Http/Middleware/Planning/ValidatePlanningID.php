@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Middleware\PaymentHistory;
+namespace App\Http\Middleware\Planning;
 
-use App\Models\PaymentHistory;
+use App\Models\Planning;
 use Closure;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
-class ValidatePaymentHistoryID
+class ValidatePlanningID
 {
     /**
      * Handle an incoming request.
@@ -17,16 +17,14 @@ class ValidatePaymentHistoryID
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $paymentId = $request->route('paymentId');
+        $uuid = $request->route('uuid');
 
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];
-        $user = PersonalAccessToken::findToken($token);
-        $payment = PaymentHistory::query()
-            ->where('uuid', '=', $paymentId)
-            ->first();
+        $user = PersonalAccessToken::findToken($token)->tokenable;
+        $planning = Planning::query()->where('uuid', '=', $uuid)->first();
 
-        if ($user->uuid === $payment->user_id) {
+        if ($user->uuid === $planning->user_id) {
             return $next($request);
         }
 

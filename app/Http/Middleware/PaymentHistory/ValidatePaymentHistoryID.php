@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace App\Http\Middleware\PaymentHistory;
 
+use App\Models\PaymentHistory;
 use Closure;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
-class ValidateUserTokenByBodyUserID
+class ValidatePaymentHistoryID
 {
     /**
      * Handle an incoming request.
@@ -16,14 +17,16 @@ class ValidateUserTokenByBodyUserID
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $uuidBody = $request->input('user_id');
+        $paymentId = $request->route('paymentId');
 
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];
+        $user = PersonalAccessToken::findToken($token)->tokenable;
+        $payment = PaymentHistory::query()
+            ->where('uuid', '=', $paymentId)
+            ->first();
 
-        $user = PersonalAccessToken::findToken($token);
-
-        if ($user->uuid === $uuidBody) {
+        if ($user->uuid === $payment->user_id) {
             return $next($request);
         }
 

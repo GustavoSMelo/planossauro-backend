@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
-class ValidateUserTokenByBodyGoogleAccount
+class ValidateUserTokenByRouteGoogleAccount
 {
     /**
      * Handle an incoming request.
@@ -21,7 +21,7 @@ class ValidateUserTokenByBodyGoogleAccount
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];
 
-        $user = PersonalAccessToken::findToken($token);
+        $user = PersonalAccessToken::findToken($token)->tokenable;
 
         if ($user->google_email === $googleEmail) {
             return $next($request);

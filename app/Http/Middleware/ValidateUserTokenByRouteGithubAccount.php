@@ -21,7 +21,7 @@ class ValidateUserTokenByBodyGithubAccount
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];
 
-        $user = PersonalAccessToken::findToken($token);
+        $user = PersonalAccessToken::findToken($token)->tokenable;
 
         if ($user->github_email === $githubEmail) {
             return $next($request);
