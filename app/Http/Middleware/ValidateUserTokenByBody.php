@@ -21,7 +21,7 @@ class ValidateUserTokenByBody
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];
 
-        $user = PersonalAccessToken::findToken($token);
+        $user = PersonalAccessToken::findToken($token)->tokenable;
 
         if ($user->uuid === $uuidBody) {
             return $next($request);

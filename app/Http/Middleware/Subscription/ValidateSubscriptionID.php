@@ -22,7 +22,7 @@ class ValidateSubscriptionID
 
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];
-        $user = PersonalAccessToken::findToken($token);
+        $user = PersonalAccessToken::findToken($token)->tokenable;
         $subscription = Subscription::query()->where('uuid', '=', $uuid)->first();
 
         if ($user->uuid === $subscription->user_id) {

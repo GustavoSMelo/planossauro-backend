@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Http\Middleware\Planning;
+namespace App\Http\Middleware;
 
-use App\Models\Planning;
 use Closure;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
-class ValidatePlanningID
+class ValidateUserTokenByBodyUserID
 {
     /**
      * Handle an incoming request.
@@ -17,14 +16,14 @@ class ValidatePlanningID
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $uuid = $request->route('uuid');
+        $uuidBody = $request->input('user_id');
 
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];
-        $user = PersonalAccessToken::findToken($token);
-        $planning = Planning::query()->where('uuid', '=', $uuid)->first();
 
-        if ($user->uuid === $planning->user_id) {
+        $user = PersonalAccessToken::findToken($token)->tokenable;
+
+        if ($user->uuid === $uuidBody) {
             return $next($request);
         }
 

@@ -12,10 +12,8 @@ use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
 use App\Http\Middleware\Planning\ValidatePlanningID;
 use App\Http\Middleware\Planning\ValidateSubscriptionID;
 use App\Http\Middleware\ValidateUserTokenByBody;
-use App\Http\Middleware\ValidateUserTokenByBodyGithubAccount;
 use App\Http\Middleware\ValidateUserTokenByBodyUserID;
 use App\Http\Middleware\ValidateUserTokenByRoute;
-use App\Http\Middleware\ValidateUserTokenByRouteGoogleAccount;
 use Illuminate\Support\Facades\Route;
 
 // Health routes
