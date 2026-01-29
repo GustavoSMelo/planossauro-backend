@@ -139,9 +139,16 @@ class SubscriptionController extends Controller
 
     public function patchPlanStatus(string $subscriptionId, Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'status' => ['string', 'required', Rule::enum(PlanStatus::class)]
         ]);
+
+        if ($validator->failed()) {
+            return response()->json([
+                'message' => 'Status validation failed',
+                'error' => $validator->errors()
+            ]);
+        }
 
         $subscription = Subscription::query()->where('uuid', '=', $subscriptionId)->first();
 
