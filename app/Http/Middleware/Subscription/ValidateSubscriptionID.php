@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware\Planning;
+namespace App\Http\Middleware\Subscription;
 
 use App\Models\Planning;
 use App\Models\Subscription;
@@ -18,7 +18,7 @@ class ValidateSubscriptionID
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $uuid = $request->route('uuid');
+        $uuid = $request->route('subscriptionId');
 
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];

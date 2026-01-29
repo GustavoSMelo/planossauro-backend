@@ -7,10 +7,9 @@ use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
-
-use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
 use App\Http\Middleware\Planning\ValidatePlanningID;
-use App\Http\Middleware\Planning\ValidateSubscriptionID;
+use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
+use App\Http\Middleware\Subscription\ValidateSubscriptionID;
 use App\Http\Middleware\ValidateUserTokenByBody;
 use App\Http\Middleware\ValidateUserTokenByBodyUserID;
 use App\Http\Middleware\ValidateUserTokenByRoute;

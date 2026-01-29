@@ -17,15 +17,14 @@ class ValidateUserTokenByBody
     public function handle(Request $request, Closure $next): Response
     {
         $uuidBody = $request->input('uuid');
+        $uuidUserBody = $request->input('user_id');
 
         $authToken = $request->header('Authorization');
         $token = explode(' ', $authToken)[1];
 
         $user = PersonalAccessToken::findToken($token)->tokenable;
 
-        if ($user->uuid === $uuidBody) {
-            return $next($request);
-        }
+        if ($user->uuid === $uuidBody || $user->uuid === $uuidUserBody) return $next($request);
 
         return response()->json([
             'Error' => 'You do not have permission to see this route or informations'
