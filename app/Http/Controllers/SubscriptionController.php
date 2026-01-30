@@ -63,7 +63,7 @@ class SubscriptionController extends Controller
             return response()->json([
                 'message' => 'Error in validation',
                 'errors' => $validator->errors()
-            ],422);
+            ], 422);
         }
 
         $plansId = $request->input('plans_id');
@@ -167,5 +167,64 @@ class SubscriptionController extends Controller
         $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
 
         return response()->json(['subscription' => $subscription]);
+    }
+
+    public function dashboard(string $userUUID)
+    {
+        $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
+        $plan = Plans::query()->where('uuid', '=', $subscription->plans_id)->first();
+
+        return response()->json([
+            'max_amount_planning_week' => $plan->amount_planning_week,
+            'max_amount_planning_daily' => $plan->amount_planning_day,
+            'used_weekly_planning' => $subscription->weekly_plans_used,
+            'used_daily_planning' => $subscription->daily_plans_used,
+            'current_plan' => $plan->plan_name,
+            'subscription_id' => $subscription->uuid,
+            'plan_id' => $plan->uuid
+        ]);
+    }
+
+    /**
+     * @param "week" | "daily" $planningType
+     * @param string $subscriptionId
+     */
+    public function addPlanningUsedOnSubscription(string $planningType, string $subscriptionId)
+    {
+        if ($planningType !== 'week' && $planningType !== 'daily')
+            return response()->json([
+                'message' => 'Planning type invalid'
+            ], 400);
+
+        $subscription = Subscription::query()->where('uuid', '=', $subscriptionId)->first();
+        $plan = Plans::query()->where('uuid', '=', $subscription->plans_id)->first();
+
+        if ($planningType === 'week') {
+            if ($subscription->weekly_plans_used >= $plan->amount_planning_week)
+                return response()->json([
+                    'message' => 'Used all weekly token'
+                ], 403);
+
+            $plansUsed = $subscription->weekly_plans_used + 1;
+            $subscription->weekly_plans_used = $plansUsed;
+            $subscription->save();
+
+            return response()->json([
+                'message' => "Subscription week tokens used updated with success"
+            ]);
+        }
+
+        if ($subscription->daily_plans_used >= $plan->amount_planning_day)
+            return response()->json([
+                'message' => 'Used all weekly token'
+            ], 403);
+
+        $plansUsed = $subscription->daily_plans_used + 1;
+        $subscription->weekly_plans_used = $plansUsed;
+        $subscription->save();
+
+        return response()->json([
+            'message' => "Subscription week tokens used updated with success"
+        ]);
     }
 }

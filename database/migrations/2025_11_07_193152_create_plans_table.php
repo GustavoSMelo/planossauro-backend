@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid()->primary();
             $table->string('plan_name');
             $table->float('price');
-            $table->integer('amount_planning_month');
+            $table->integer('amount_planning_day');
             $table->integer('amount_planning_week');
             $table->timestamps();
         });

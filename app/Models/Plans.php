@@ -24,5 +24,5 @@ class Plans extends Model
      */
     public $timestamps = true;
 
-    protected $fillable = ['plan_name', 'price', 'amount_planning_month', 'amounth_planning_week', 'has_cloud_save'];
+    protected $fillable = ['plan_name', 'price', 'amount_planning_day', 'amounth_planning_week', 'has_cloud_save'];
 }
