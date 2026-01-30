@@ -99,6 +99,12 @@ Route::prefix('subscription')->middleware('auth:sanctum')->group(function () {
 
     Route::get('/{userUUID}', [SubscriptionController::class, 'show'])
         ->middleware(ValidateUserTokenByRoute::class);
+
+    Route::get('/dashboard/{userUUID}', [SubscriptionController::class, 'dashboard'])
+        ->middleware(ValidateUserTokenByRoute::class);
+
+    Route::patch('/{planningType}/{subscriptionId}', [SubscriptionController::class, 'addPlanningUsedOnSubscription'])
+        ->middleware(ValidateSubscriptionID::class);
 });
 
 // Payment history routes
