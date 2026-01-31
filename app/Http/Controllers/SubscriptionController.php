@@ -40,7 +40,7 @@ class SubscriptionController extends Controller
             'daily_plans_used' => 0,
             'weekly_plans_used' => 0,
             'date_verified' => null,
-            'next_billing' => null,
+            'next_billing' => date('Y-m-d', strtotime('+1 month')),
             'status' => PlanStatus::ACTIVE,
             'last_four_digits' => null,
             'user_id' => $user->uuid,
@@ -165,8 +165,9 @@ class SubscriptionController extends Controller
     public function show(string $userUUID)
     {
         $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
+        $plan = Plans::query('uuid', '=', $subscription->plans_id)->first();
 
-        return response()->json(['subscription' => $subscription]);
+        return response()->json(['subscription' => $subscription, 'plan' => $plan]);
     }
 
     public function dashboard(string $userUUID)
