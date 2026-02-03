@@ -21,7 +21,7 @@ class PlansSeeder extends Seeder
         ]);
 
         Plans::query()->create([
-            'price' => 9.99,
+            'price' => 20.00,
             'plan_name' => 'essencial',
             'amount_planning_day' => 10,
             'amount_planning_week' => 10,
@@ -29,10 +29,10 @@ class PlansSeeder extends Seeder
         ]);
 
         Plans::query()->create([
-            'price' => 14.99,
+            'price' => 55.00,
             'plan_name' => 'premium',
-            'amount_planning_day' => 50,
-            'amount_planning_week' => 50,
+            'amount_planning_day' => 90,
+            'amount_planning_week' => 90,
             'has_cloud_save' => true
         ]);
     }

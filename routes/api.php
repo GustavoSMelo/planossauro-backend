@@ -5,6 +5,7 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
+use App\Http\Controllers\StripeController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\Planning\ValidatePlanningID;
@@ -124,6 +125,8 @@ Route::prefix('payment/history')->middleware('auth:sanctum')->group(function () 
     Route::patch('/status/update/{paymentId}', [PaymentHistoryController::class, 'updatePaymentStatus'])
         ->middleware(ValidatePaymentHistoryID::class);
 });
+
+Route::post('/webhook/payment', [StripeController::class, 'handler']);
 
 // Auth routes
 Route::get('/token/github/{code}', [AuthController::class, 'githubAccessToken']);

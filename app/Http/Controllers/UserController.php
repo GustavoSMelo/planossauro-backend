@@ -85,17 +85,32 @@ class UserController extends Controller
             $googleValidationCode = rand(10000, 99999);
             $smsValidationCode = rand(10000, 99999);
 
-            $userCreated = User::create([
-                'full_name' => $full_name,
-                'google_email' => $google_email,
-                'github_email' => $github_email,
-                'github_id' => $github_id,
-                'google_id' => $google_id,
-                'cellphone_number' => $cellphone_number,
-                'github_validation_code' => $githubValidationCode,
-                'google_validation_code' => $googleValidationCode,
-                'sms_validation_code' => $smsValidationCode
-            ]);
+            $userFinded = User::query()->where('github_email', '=', $github_email)->orWhere('google_email', '=', $google_email)->first();
+
+            if ($userFinded) {
+                $userFinded->full_name = $full_name;
+                $userFinded->google_email = $google_email;
+                $userFinded->github_email = $github_email;
+                $userFinded->github_id = $github_id;
+                $userFinded->cellphone_number = $cellphone_number;
+                $userFinded->github_validation_code = $githubValidationCode;
+                $userFinded->google_validation_code = $googleValidationCode;
+                $userFinded->sms_validation_code = $smsValidationCode;
+
+                $userFinded->save();
+            } else {
+                $userCreated = User::create([
+                    'full_name' => $full_name,
+                    'google_email' => $google_email,
+                    'github_email' => $github_email,
+                    'github_id' => $github_id,
+                    'google_id' => $google_id,
+                    'cellphone_number' => $cellphone_number,
+                    'github_validation_code' => $githubValidationCode,
+                    'google_validation_code' => $googleValidationCode,
+                    'sms_validation_code' => $smsValidationCode
+                ]);
+            }
 
             if (!empty($github_email)) {
                 Resend::emails()->send([
@@ -111,6 +126,13 @@ class UserController extends Controller
                     'subject' => 'Planeja.ai - Validation Code',
                     'html' => view('mail.validation-mail', ['validation_code' => $googleValidationCode])->render()
                 ]);
+            }
+
+            if ($userFinded) {
+                return response()->json([
+                    'message' => 'user updated with success',
+                    'data' => $userFinded,
+                ], 200);
             }
 
             return response()->json([

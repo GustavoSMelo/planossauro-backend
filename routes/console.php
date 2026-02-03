@@ -3,7 +3,6 @@
 use App\Models\Subscription;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -21,7 +20,7 @@ Schedule::call(function () {
         $subscription->save();
     }
 })
-    ->everyMinute()
+    ->daily()
     ->timezone('America/Sao_Paulo')
     ->name('reset_subscription_tokens')
     ->withoutOverlapping();
