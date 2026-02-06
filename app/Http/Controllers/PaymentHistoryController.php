@@ -22,7 +22,11 @@ class PaymentHistoryController extends Controller
                 'plan_id' => ['required', 'string', 'exists:plans,uuid', 'uuid'],
                 'user_id' => ['required', 'string', 'exists:user,uuid', 'uuid'],
                 'last_four_digits' => ['required', 'numeric'],
-                'NFe' => ['nullable', 'string']
+                'NFe' => ['nullable', 'string'],
+                'stripe_invoice' => ['nullable', 'string'],
+                'stripe_product' => ['nullable', 'string'],
+                'stripe_subscription' => ['nullable', 'string'],
+                'subscription_id' => ['required', 'string', 'uuid', 'exists:subscription,uuid'],
             ]);
 
             if ($validator->fails()) {
@@ -41,6 +45,10 @@ class PaymentHistoryController extends Controller
             $lastFourDigits = $request->input('last_four_digits');
             $userId = $request->input('user_id');
             $NFe = $request->input('NFe');
+            $stripeInvoice = $request->input('stripe_invoice');
+            $stripeProduct = $request->input('stripe_product');
+            $stripeSubscription = $request->input('stripe_subscription');
+            $subscriptionId = $request->input('subscription_id');
 
             PaymentHistory::create([
                 'payment_date' => $paymentDate,
@@ -51,7 +59,11 @@ class PaymentHistoryController extends Controller
                 'plan_id' => $planId,
                 'user_id' => $userId,
                 'status' => $status,
-                'NFe' => $NFe
+                'NFe' => $NFe,
+                'stripe_invoice' => $stripeInvoice,
+                'stripe_product' => $stripeProduct,
+                'stripe_subscription' => $stripeSubscription,
+                'subscription_id' => $subscriptionId
             ]);
 
             return response()->json([
@@ -85,7 +97,11 @@ class PaymentHistoryController extends Controller
             'plan_id' => ['required', 'string', 'exists:plans,uuid', 'uuid'],
             'user_id' => ['required', 'string', 'exists:user,uuid', 'uuid'],
             'last_four_digits' => ['required', 'numeric'],
-            'NFe' => ['nullable', 'string']
+            'NFe' => ['nullable', 'string'],
+            'stripe_invoice' => ['nullable', 'string'],
+            'stripe_product' => ['nullable', 'string'],
+            'stripe_subscription' => ['nullable', 'string'],
+            'subscription_id' => ['required', 'string', 'uuid', 'exists:subscription,uuid'],
         ]);
 
         $paymentDate = $request->input('payment_date');
@@ -96,6 +112,10 @@ class PaymentHistoryController extends Controller
         $planId = $request->input('plan_id');
         $lastFourDigits = $request->input('last_four_digits');
         $userId = $request->input('user_id');
+        $stripeInvoice = $request->input('stripe_invoice');
+        $stripeProduct = $request->input('stripe_product');
+        $stripeSubscription = $request->input('stripe_subscription');
+        $subscriptionId = $request->input('subscription_id');
 
         $payment = PaymentHistory::query()->where('uuid', '=', $paymentId)->first();
 
@@ -112,6 +132,10 @@ class PaymentHistoryController extends Controller
             'plan_id' => $planId,
             'user_id' => $userId,
             'status' => $status,
+            'stripe_invoice' => $stripeInvoice,
+            'stripe_product' => $stripeProduct,
+            'stripe_subscription' => $stripeSubscription,
+            'subscription_id' => $subscriptionId
         ]);
         $payment->save();
 

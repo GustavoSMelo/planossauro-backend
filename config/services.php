@@ -24,6 +24,10 @@ return [
         'name' => env('MAIL_FROM_NAME')
     ],
 
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET_KEY')
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

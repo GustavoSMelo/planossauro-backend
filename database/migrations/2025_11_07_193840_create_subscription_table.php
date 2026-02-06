@@ -19,6 +19,11 @@ return new class extends Migration
             $table->date('next_billing')->nullable();
             $table->string('status');
             $table->integer('last_four_digits')->nullable();
+            $table->string('card_brand')->nullable();
+            $table->string('stripe_subscription')->nullable();
+            $table->string('stripe_user')->nullable();
+            $table->string('stripe_price')->nullable();
+            $table->string('stripe_product')->nullable();
             $table->timestamps();
 
             $table->foreignUuid('user_id')->unique()->references('uuid')->on('user');

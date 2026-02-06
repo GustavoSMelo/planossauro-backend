@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Dto\Stripe;
+
+class StripeCache
+{
+    public string $subscription_id;
+    public string $customer_id;
+    public string $invoice_id;
+    public string $product_id;
+    public string $invoice_pdf;
+    public int $effect_at;
+    public int $amount_paid;
+    public string $status;
+    public string $card_brand;
+    public string $last4;
+    public string $price_id;
+
+    public function __construct(
+        string $subscription_id,
+        string $customer_id,
+        string $invoice_id,
+        string $product_id,
+        string $invoice_pdf,
+        int $effect_at,
+        int $amount_paid,
+        string $status,
+        string $card_brand,
+        string $last4,
+        string $price_id,
+    ) {
+        $this->subscription_id = $subscription_id;
+        $this->customer_id = $customer_id;
+        $this->invoice_id = $invoice_id;
+        $this->product_id = $product_id;
+        $this->invoice_pdf = $invoice_pdf;
+        $this->invoice_id = $invoice_id;
+        $this->effect_at = $effect_at;
+        $this->amount_paid = $amount_paid;
+        $this->status = $status;
+        $this->$card_brand = $card_brand;
+        $this->last4 = $last4;
+        $this->price_id = $price_id;
+    }
+}

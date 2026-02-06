@@ -20,10 +20,14 @@ return new class extends Migration
             $table->float('price');
             $table->string('status');
             $table->string('NFe')->nullable()->default(null);
+            $table->string('stripe_invoice')->nullable();
+            $table->string('stripe_product')->nullable();
+            $table->string('stripe_subscription')->nullable();
             $table->timestamps();
 
             $table->foreignUuid('plan_id')->references('uuid')->on('plans');
             $table->foreignUuid('user_id')->references('uuid')->on('user');
+            $table->foreignUuid('subscription_id')->references('uuid')->on('subscription');
         });
     }
 

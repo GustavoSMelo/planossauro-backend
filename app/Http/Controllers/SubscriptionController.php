@@ -28,6 +28,7 @@ class SubscriptionController extends Controller
                 'next_billing' => null,
                 'status' => PlanStatus::ACTIVE,
                 'last_four_digits' => null,
+                'card_brand' => null,
                 'user_id' => $user->uuid,
                 'plans_id' => $plans->uuid
             ]);
@@ -43,6 +44,7 @@ class SubscriptionController extends Controller
             'next_billing' => date('Y-m-d', strtotime('+1 month')),
             'status' => PlanStatus::ACTIVE,
             'last_four_digits' => null,
+            'card_brand' => null,
             'user_id' => $user->uuid,
             'plans_id' => $plans->uuid
         ]);
@@ -55,8 +57,14 @@ class SubscriptionController extends Controller
         $validator = Validator::make($request->all(), [
             'plans_id' => ['string', 'required', 'uuid', 'exists:plans,uuid'],
             'last_four_digits' => ['required', 'numeric'],
+            'card_brand' => ['required', 'string'],
             'next_billing' => ['required', 'date', 'after_or_equal:today'],
             'date_verified' => ['required', 'date', 'after_or_equal:today'],
+            'card_brand' => ['nullable', 'string'],
+            'stripe_user' => ['nullable', 'string'],
+            'stripe_price' => ['nullable', 'string'],
+            'stripe_product' => ['nullable', 'string'],
+            'stripe_subscription' => ['nullable', 'string']
         ]);
 
         if ($validator->fails()) {
@@ -70,6 +78,11 @@ class SubscriptionController extends Controller
         $lastFourDigits = $request->input('last_four_digits');
         $nextBilling = $request->input('next_billing');
         $dateVerified = $request->input('date_verified');
+        $stripeUser = $request->input('stripe_user');
+        $stripeSubscription = $request->input('stripe_subscription');
+        $stripePrice = $request->input('stripe_price');
+        $stripeProduct = $request->input('stripe_product');
+        $cardBrand = $request->input('card_brand');
 
         $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
 
@@ -82,7 +95,12 @@ class SubscriptionController extends Controller
                 'user_id' => $userUUID,
                 'daily_plans_used' => 0,
                 'weekly_plans_used' => 0,
-                'status' => PlanStatus::PROCESSING
+                'status' => PlanStatus::PROCESSING,
+                'stripe_user' => $stripeUser,
+                'stripe_subscription' => $stripeSubscription,
+                'stripe_price' => $stripePrice,
+                'stripe_product' => $stripeProduct,
+                'card_brand' => $cardBrand
             ]);
 
             $subscription->save();
@@ -99,7 +117,12 @@ class SubscriptionController extends Controller
             'user_id' => $userUUID,
             'daily_plans_used' => 0,
             'weekly_plans_used' => 0,
-            'status' => PlanStatus::PROCESSING
+            'status' => PlanStatus::PROCESSING,
+            'stripe_user' => $stripeUser,
+            'stripe_subscription' => $stripeSubscription,
+            'stripe_price' => $stripePrice,
+            'stripe_product' => $stripeProduct,
+            'card_brand' => $cardBrand
         ]);
 
         return response()->json([
@@ -114,13 +137,24 @@ class SubscriptionController extends Controller
             'plans_id' => ['string', 'required', 'uuid', 'exists:plans,uuid'],
             'last_four_digits' => ['required', 'numeric'],
             'next_billing' => ['required', 'date', 'after_or_equal:today'],
+            'card_brand' => ['card_brand', 'string'],
             'date_verified' => ['required', 'date', 'after_or_equal:today'],
+            'card_brand' => ['nullable', 'string'],
+            'stripe_user' => ['nullable', 'string'],
+            'stripe_price' => ['nullable', 'string'],
+            'stripe_product' => ['nullable', 'string'],
+            'stripe_subscription' => ['nullable', 'string']
         ]);
 
         $plansId = $request->input('plans_id');
         $lastFourDigits = $request->input('last_four_digits');
         $nextBilling = $request->input('next_billing');
         $dateVerified = $request->input('date_verified');
+        $stripeUser = $request->input('stripe_user');
+        $stripeSubscription = $request->input('stripe_subscription');
+        $stripePrice = $request->input('stripe_price');
+        $stripeProduct = $request->input('stripe_product');
+        $cardBrand = $request->input('card_brand');
 
         $subscription->update([
             'next_billing' => $nextBilling,
@@ -130,7 +164,12 @@ class SubscriptionController extends Controller
             'user_id' => $userId,
             'daily_plans_used' => 0,
             'weekly_plans_used' => 0,
-            'status' => PlanStatus::PROCESSING
+            'status' => PlanStatus::PROCESSING,
+            'stripe_user' => $stripeUser,
+            'stripe_subscription' => $stripeSubscription,
+            'stripe_price' => $stripePrice,
+            'stripe_product' => $stripeProduct,
+            'card_brand' => $cardBrand
         ]);
         $subscription->save();
 
