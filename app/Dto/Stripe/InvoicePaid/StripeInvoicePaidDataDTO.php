@@ -13,6 +13,8 @@ class StripeInvoicePaidDataDTO
     public Lines $lines;
     public ?string $number;
     public string $status;
+    public BillingDetails $billing_details;
+    public StatusTransitions $status_transitions;
 
     public function __construct(
         string $id,
@@ -23,7 +25,9 @@ class StripeInvoicePaidDataDTO
         string $invoice_pdf,
         Lines $lines,
         string $number,
-        string $status
+        string $status,
+        BillingDetails $billing_details,
+        StatusTransitions $status_transitions
     ) {
         $this->id = $id;
         $this->amount_paid = $amount_paid;
@@ -34,5 +38,7 @@ class StripeInvoicePaidDataDTO
         $this->lines = $lines;
         $this->number = $number;
         $this->status = $status;
+        $this->billing_details = $billing_details;
+        $this->status_transitions = $status_transitions;
     }
 }
