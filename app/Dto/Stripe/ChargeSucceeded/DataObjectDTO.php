@@ -7,13 +7,13 @@ class DataObjectDTO
     public string $id;
     public PaymentMethodDetailsDTO $payment_method_details;
     public string $customer;
-    public BillingDetails $billing_details;
+    public BillingDetailsDTO $billing_details;
 
     public function __construct(
         string $id,
         PaymentMethodDetailsDTO $payment_method_details,
         string $customer,
-        BillingDetails $billing_details
+        BillingDetailsDTO $billing_details
     )
     {
         $this->id = $id;

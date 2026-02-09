@@ -17,7 +17,8 @@ class StripeCache
     public ?string $price_id;
     public ?string $customer_email;
     public ?int $paid_at;
-
+    public ?string $plan_uuid;
+    public ?string $description;
 
     public function __construct(
         ?string $subscription_id,
@@ -32,7 +33,9 @@ class StripeCache
         ?string $last4,
         ?string $price_id,
         ?string $customer_email,
-        ?int $paid_at
+        ?int $paid_at,
+        ?string $plan_uuid,
+        ?string $description
     ) {
         $this->subscription_id = $subscription_id;
         $this->customer_id = $customer_id;
@@ -48,5 +51,7 @@ class StripeCache
         $this->price_id = $price_id;
         $this->customer_email = $customer_email;
         $this->paid_at = $paid_at;
+        $this->plan_uuid = $plan_uuid;
+        $this->description = $description;
     }
 }

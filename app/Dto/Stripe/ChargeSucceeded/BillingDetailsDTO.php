@@ -2,7 +2,7 @@
 
 namespace App\Dto\Stripe\ChargeSucceeded;
 
-class BillingDetails
+class BillingDetailsDTO
 {
     public string $email;
 
