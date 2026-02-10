@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlanStatus;
 use App\Models\Subscription;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -13,11 +14,14 @@ Schedule::call(function () {
     $subscriptions = Subscription::where('next_billing', '>=', date('Y-m-d'))->get();
 
     foreach ($subscriptions as $subscription) {
-        $subscription->daily_plans_used = 0;
-        $subscription->weekly_plans_used = 0;
-        $subscription->next_billing = date('Y-m-d', strtotime('+1 month'));
+        if ($subscription->status === PlanStatus::PAID->value || $subscription->status === PlanStatus::ACTIVE->value) {
+            $subscription->daily_plans_used = 0;
+            $subscription->weekly_plans_used = 0;
 
-        $subscription->save();
+            if ($subscription->status === PlanStatus::ACTIVE->value)
+                $subscription->next_billing = date('Y-m-d', strtotime('+1 month'));
+            $subscription->save();
+        }
     }
 })
     ->daily()

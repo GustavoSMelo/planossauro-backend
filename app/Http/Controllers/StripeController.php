@@ -85,12 +85,8 @@ class StripeController extends Controller
         $subscription->date_verified = date('Y/m/d');
 
         if ($stripeCache->plan_uuid === '') {
-            $subscription->daily_plans_used = 3;
-            $subscription->weekly_plans_used = 3;
             $subscription->plans_id = '91842dba-9965-42c9-af2a-07fef464b315';
         } else {
-            $subscription->daily_plans_used = $plan->amount_planning_day;
-            $subscription->weekly_plans_used = $plan->amount_planning_week;
             $subscription->plans_id = $plan->uuid;
         }
 
@@ -318,7 +314,7 @@ class StripeController extends Controller
 
                 break;
             case "customer.subscription.deleted":
-                $subscriptionDeletedPlan = new SubscriptionDeletedPlanDTO($body['data']['object']['plan']['status']);
+                $subscriptionDeletedPlan = new SubscriptionDeletedPlanDTO($body['data']['object']['status']);
                 $subscriptionDeletedItemsDataDTO = new SubscriptionDeletedItemsDataDTO($body['data']['object']['items']['data'][0]['current_period_end']);
                 $subscriptionDeletedItemsDTO = new SubscriptionDeletedItemsDTO([$subscriptionDeletedItemsDataDTO]);
 
@@ -329,22 +325,24 @@ class StripeController extends Controller
                     $body['data']['object']['ended_at'],
                     $subscriptionDeletedItemsDTO
                 );
-
                 $subscriptionDeletedData = new SubscriptionDeletedDataDTO($subscriptionDeletedObject);
-
                 $subscriptionDeleted = new SubscriptionDeletedDTO(
                     $body['id'],
-                    $body['status'],
+                    $body['type'],
                     $subscriptionDeletedData
                 );
 
-                if ($subscriptionDeleted->data->object->plan->status !== PlanStatus::CANCELED) {
+                Log::info('Subscription object created');
+
+                if ($subscriptionDeleted->data->object->plan->status !== PlanStatus::CANCELED->value) {
+                    Log::info('Subscription plan is not equal cancel');
+                    Log::info($subscriptionDeleted->data->object->plan->status);
                     return;
                 }
 
                 $subscription = Subscription::query()
                     ->where(
-                        'stripe_subscription',
+                        'stripe_user',
                         '=',
                         $subscriptionDeleted
                             ->data
@@ -352,11 +350,14 @@ class StripeController extends Controller
                             ->customer
                     )->first();
 
-                $subscription->daily_plans_used = 3;
-                $subscription->weekly_plans_used = 3;
+                Log::info('Subscription get by database');
+                Log::info('subscription uuid: ' . $subscription->uuid);
+
+                $subscription->daily_plans_used = 0;
+                $subscription->weekly_plans_used = 0;
                 $subscription->date_verified = date('Y-m-d');
-                $subscription->next_billing = $subscriptionDeleted->data->object->items->data[0]->current_period_end; // <-
-                $subscription->status = PlanStatus::ACTIVE;
+                $subscription->next_billing = gmdate('Y-m-d', $subscriptionDeleted->data->object->items->data[0]->current_period_end);
+                $subscription->status = PlanStatus::ACTIVE->value;
                 $subscription->last_four_digits = null;
                 $subscription->card_brand = null;
                 $subscription->stripe_subscription = null;
@@ -364,6 +365,8 @@ class StripeController extends Controller
                 $subscription->stripe_price = null;
                 $subscription->stripe_product = null;
                 $subscription->plans_id = '91842dba-9965-42c9-af2a-07fef464b315';
+
+                Log::info('subscription saved');
 
                 $subscription->save();
 
