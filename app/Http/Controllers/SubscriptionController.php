@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Stripe\StripeClient;
 
 class SubscriptionController extends Controller
 {
@@ -266,5 +267,34 @@ class SubscriptionController extends Controller
         return response()->json([
             'message' => "Subscription week tokens used updated with success"
         ]);
+    }
+
+    public function changePaymentMethod(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'return_url' => ['required', 'string', 'url'],
+            'customer' => ['required', 'string', 'exists:subscription,stripe_user']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'Error in validation',
+                'errors' => $validator->errors()
+            ]);
+        }
+
+        $customer = $request->input('customer');
+        $return_url = $request->input('return_url');
+
+        $stripe = new StripeClient(config('services.stripe.secret'));
+        $session = $stripe->billingPortal->sessions->create([
+            'customer' => $customer,
+            'return_url' => $return_url,
+            'flow_data' => [
+                'type' => 'payment_method_update'
+            ]
+        ]);
+
+        return response()->json([$session]);
     }
 }

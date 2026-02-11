@@ -108,6 +108,7 @@ Route::prefix('subscription')->middleware('auth:sanctum')->group(function () {
         ->middleware(ValidateSubscriptionID::class);
 });
 
+Route::post('/change/payment/method', [SubscriptionController::class, 'changePaymentMethod']);
 // Payment history routes
 Route::prefix('payment/history')->middleware('auth:sanctum')->group(function () {
     Route::get('/{userUUID}', [PaymentHistoryController::class, 'show'])

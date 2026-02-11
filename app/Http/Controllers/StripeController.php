@@ -30,6 +30,13 @@ use App\Dto\Stripe\SubscriptionDeleted\SubscriptionDeletedItemsDataDTO;
 use App\Dto\Stripe\SubscriptionDeleted\SubscriptionDeletedItemsDTO;
 use App\Dto\Stripe\SubscriptionDeleted\SubscriptionDeletedObjectDTO;
 use App\Dto\Stripe\SubscriptionDeleted\SubscriptionDeletedPlanDTO;
+use App\Dto\Stripe\SubscriptionUpdated\DataDTO as SubscriptionUpdatedDataDTO;
+use App\Dto\Stripe\SubscriptionUpdated\ObjectDTO;
+use App\Dto\Stripe\SubscriptionUpdated\PlanDTO;
+use App\Dto\Stripe\SubscriptionUpdated\PreviousAttributes;
+use App\Dto\Stripe\SubscriptionUpdated\SubscriptionItems;
+use App\Dto\Stripe\SubscriptionUpdated\SubscriptionItemsData;
+use App\Dto\Stripe\SubscriptionUpdated\SubscriptionUpdatedDTO;
 use App\Enums\PlanStatus;
 use App\Models\PaymentHistory;
 use App\Models\Plans;
@@ -38,6 +45,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Stripe\StripeClient;
 
 class StripeController extends Controller
 {
@@ -370,6 +378,113 @@ class StripeController extends Controller
 
                 $subscription->save();
 
+                break;
+            case "customer.subscription.updated":
+                $planDTO = new PlanDTO(
+                    $body['data']['object']['items']['data'][0]['plan']['id'],
+                    $body['data']['object']['items']['data'][0]['plan']['amount'],
+                    $body['data']['object']['items']['data'][0]['plan']['product'],
+                    $body['data']['object']['items']['data'][0]['plan']['metadata']['plan_uuid'],
+                );
+
+                $subscriptionItemsData = new SubscriptionItemsData(
+                    $body['data']['object']['items']['data'][0]['id'],
+                    $body['data']['object']['items']['data'][0]['current_period_end'],
+                    $planDTO,
+                    $body['data']['object']['items']['data'][0]['plan']['subscription']
+                );
+                $subscriptionItems = new SubscriptionItems([$subscriptionItemsData]);
+                $objectDataDTO = new ObjectDTO(
+                    $body['data']['object']['id'],
+                    $body['data']['object']['customer'],
+                    $subscriptionItems
+                );
+
+                $defaultPaymentMethod = $body['data']['previous_attributes']['default_payment_method'];
+
+                if (!$defaultPaymentMethod || $defaultPaymentMethod === null) {
+                    $defaultPaymentMethod = '';
+                }
+
+                $planPreviousAttributes = new PlanDTO(
+                    $body['data']['previous_attributes']['items']['data'][0]['plan']['id'],
+                    $body['data']['previous_attributes']['items']['data'][0]['plan']['amount'],
+                    $body['data']['previous_attributes']['items']['data'][0]['plan']['product'],
+                    $body['data']['previous_attributes']['items']['data'][0]['plan']['metadata']['plan_uuid'],
+
+                );
+                $subscriptionItemsDataPreviousAttributes = new SubscriptionItemsData(
+                    $body['data']['previous_attributes']['items']['data'][0]['id'],
+                    $body['data']['previous_attributes']['items']['data'][0]['current_period_end'],
+                    $planPreviousAttributes,
+                    $body['data']['previous_attributes']['items']['data'][0]['current_period_end']
+                );
+                $subscriptionItemsPreviousAttribes = new SubscriptionItems([$subscriptionItemsDataPreviousAttributes]);
+                $previousAttribute = new PreviousAttributes($defaultPaymentMethod, $subscriptionItemsPreviousAttribes);
+
+                $dataDTO = new SubscriptionUpdatedDataDTO($objectDataDTO, $previousAttribute);
+                $subscriptionUpdatedDTO = new SubscriptionUpdatedDTO($body['id'], $body['type'], $dataDTO);
+
+                if (strlen($subscriptionUpdatedDTO->data->previous_attributes->default_payment_method) > 0) {
+                    $stripe = new StripeClient(config('services.stripe.secret'));
+                    $paymentMethod = $stripe->paymentMethods->retrieve($subscriptionUpdatedDTO->data->previous_attributes->default_payment_method);
+
+                    $brand = $paymentMethod->card->brand;
+                    $last4 = $paymentMethod->card->last4;
+
+                    $subscription = Subscription::query()
+                        ->where('stripe_user', '=', $subscriptionUpdatedDTO->data->object->customer)
+                        ->first();
+
+                    $subscription->card_brand = $brand;
+                    $subscription->last_four_digits = $last4;
+
+                    $subscription->save();
+                    return;
+                }
+
+                $subscription = Subscription::query()
+                    ->where('stripe_user', '=', $subscriptionUpdatedDTO->data->object->customer)
+                    ->first();
+
+                $subscription->next_billing = gmdate('Y-m-d', $subscriptionUpdatedDTO->data->object->items->data[0]->current_period_end);
+                $subscription->stripe_price = $subscriptionUpdatedDTO->data->object->items->data[0]->plan->id;
+                $subscription->stripe_product = $subscriptionUpdatedDTO->data->object->items->data[0]->plan->product;
+
+                $plan = Plans::query()
+                    ->where(
+                        'plan_uuid',
+                        '=',
+                        $subscriptionUpdatedDTO
+                            ->data
+                            ->object
+                            ->items
+                            ->data[0]
+                            ->plan
+                            ->metadata
+                            ->plan_uuid
+                    )->first();
+
+                if (!$plan) {
+                    $plan = Plans::query()
+                        ->where(
+                            'price',
+                            '=',
+                            ($subscriptionUpdatedDTO
+                                ->data
+                                ->object
+                                ->items
+                                ->data[0]
+                                ->plan
+                                ->amount / 100
+                            )
+                        )->first();
+                }
+
+                $subscription->plans_id = $plan->uuid;
+                break;
+            default:
+                Log::info('Method not founded for this event: ' . $body['type']);
                 break;
         }
     }
