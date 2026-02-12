@@ -2,8 +2,6 @@
 
 namespace App\Dto\Stripe\SubscriptionUpdated;
 
-use MetadataDTO;
-
 class PlanDTO
 {
     public string $id; // price id

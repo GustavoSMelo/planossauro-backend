@@ -10,6 +10,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\Planning\ValidatePlanningID;
 use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
+use App\Http\Middleware\Subscription\ValidateStripeCustomerID;
 use App\Http\Middleware\Subscription\ValidateSubscriptionID;
 use App\Http\Middleware\ValidateUserTokenByBody;
 use App\Http\Middleware\ValidateUserTokenByBodyUserID;
@@ -108,7 +109,11 @@ Route::prefix('subscription')->middleware('auth:sanctum')->group(function () {
         ->middleware(ValidateSubscriptionID::class);
 });
 
-Route::post('/change/payment/method', [SubscriptionController::class, 'changePaymentMethod']);
+Route::put('/change/payment/method', [SubscriptionController::class, 'changePaymentMethod']);
+    // ->middleware(ValidateStripeCustomerID::class);
+
+Route::put('/change/subscription/plan', [SubscriptionController::class, 'changeSubscriptionPlan']);
+
 // Payment history routes
 Route::prefix('payment/history')->middleware('auth:sanctum')->group(function () {
     Route::get('/{userUUID}', [PaymentHistoryController::class, 'show'])

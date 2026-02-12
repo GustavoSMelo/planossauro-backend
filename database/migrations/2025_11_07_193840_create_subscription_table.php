@@ -20,10 +20,12 @@ return new class extends Migration
             $table->string('status');
             $table->integer('last_four_digits')->nullable();
             $table->string('card_brand')->nullable();
+            $table->float('price')->default(0);
             $table->string('stripe_subscription')->nullable()->unique();
             $table->string('stripe_user')->nullable()->unique();
             $table->string('stripe_price')->nullable();
             $table->string('stripe_product')->nullable();
+            $table->string('stripe_subscription_item')->nullable();
             $table->timestamps();
 
             $table->foreignUuid('user_id')->unique()->references('uuid')->on('user');

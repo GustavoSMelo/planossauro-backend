@@ -295,6 +295,52 @@ class SubscriptionController extends Controller
             ]
         ]);
 
-        return response()->json([$session]);
+        return response()->json(['update_url' => $session->url]);
+    }
+
+    public function changeSubscriptionPlan(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'customer' => ['required', 'string', 'exists:subscription,stripe_user'],
+            'return_url' => ['required', 'string', 'url'],
+            'subscription' => ['required', 'string'],
+            'price' => ['required', 'string'],
+            'item' => ['required', 'string']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error in validation',
+                'errors' => $validator->errors()
+            ]);
+        }
+
+
+        $customer = $request->input('customer');
+        $return_url = $request->input('return_url');
+        $subscription = $request->input('subscription');
+        $price = $request->input('price');
+        $item = $request->input('item');
+
+        $stripe = new StripeClient(config('services.stripe.secret'));
+        $session = $stripe->billingPortal->sessions->create([
+            'customer' => $customer,
+            'return_url' => $return_url,
+            'flow_data' => [
+                'type' => 'subscription_update_confirm',
+                'subscription_update_confirm' => [
+                    'subscription' => $subscription,
+                    'items' => [
+                        [
+                            "id" => $item,
+                            "price" => $price,
+                            'quantity' => 1
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+
+        return response()->json([ 'update_url' => $session->url ]);
     }
 }

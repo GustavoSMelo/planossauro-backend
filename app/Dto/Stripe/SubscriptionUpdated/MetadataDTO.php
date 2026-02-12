@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Dto\Stripe\SubscriptionUpdated;
+
 class MetadataDTO
 {
     public string $plan_uuid;

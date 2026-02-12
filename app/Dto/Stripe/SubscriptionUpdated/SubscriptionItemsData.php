@@ -4,7 +4,7 @@ namespace App\Dto\Stripe\SubscriptionUpdated;
 
 class SubscriptionItemsData
 {
-    public string $id;
+    public string $id; // Subscription item ID
     public int $current_period_end;
     public PlanDTO $plan;
     public string $subscription;

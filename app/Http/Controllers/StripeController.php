@@ -31,6 +31,7 @@ use App\Dto\Stripe\SubscriptionDeleted\SubscriptionDeletedItemsDTO;
 use App\Dto\Stripe\SubscriptionDeleted\SubscriptionDeletedObjectDTO;
 use App\Dto\Stripe\SubscriptionDeleted\SubscriptionDeletedPlanDTO;
 use App\Dto\Stripe\SubscriptionUpdated\DataDTO as SubscriptionUpdatedDataDTO;
+use App\Dto\Stripe\SubscriptionUpdated\MetadataDTO as SubscriptionUpdatedMetadataDTO;
 use App\Dto\Stripe\SubscriptionUpdated\ObjectDTO;
 use App\Dto\Stripe\SubscriptionUpdated\PlanDTO;
 use App\Dto\Stripe\SubscriptionUpdated\PreviousAttributes;
@@ -66,7 +67,8 @@ class StripeController extends Controller
             $stripeCache->paid_at &&
             $stripeCache->plan_uuid &&
             $stripeCache->description &&
-            $stripeCache->customer_email
+            $stripeCache->customer_email &&
+            $stripeCache->subscription_item
         ) return true;
 
         return false;
@@ -84,13 +86,15 @@ class StripeController extends Controller
 
         $subscription->stripe_subscription = $stripeCache->subscription_id;
         $subscription->stripe_user = $stripeCache->customer_id;
-        $subscription->stripe_price = floor($stripeCache->amount_paid / 100);
+        $subscription->stripe_price = $stripeCache->price_id;
         $subscription->stripe_product = $stripeCache->product_id;
+        $subscription->stripe_subscription_item = $stripeCache->subscription_item;
         $subscription->next_billing = gmdate('Y/m/d', $stripeCache->effect_at);
         $subscription->status = $stripeCache->status;
         $subscription->card_brand = $stripeCache->card_brand;
         $subscription->last_four_digits = $stripeCache->last4;
         $subscription->date_verified = date('Y/m/d');
+        $subscription->price = floor($stripeCache->amount_paid / 100);
 
         if ($stripeCache->plan_uuid === '') {
             $subscription->plans_id = '91842dba-9965-42c9-af2a-07fef464b315';
@@ -180,6 +184,7 @@ class StripeController extends Controller
                         null,
                         null,
                         null,
+                        null,
                         null
                     );
 
@@ -259,6 +264,7 @@ class StripeController extends Controller
                         $stripeInvoicePaidDTO->data->object->status_transitions->paid_at,
                         null,
                         $stripeInvoicePaidDTO->data->object->lines->data[0]->description,
+                        $stripeInvoicePaidDTO->data->object->lines->data[0]->parent->subscription_item_details->subscription_item,
                     );
 
                     Cache::set('stripeCache-' . $stripeCacheHelper->customer_id, $stripeCacheHelper);
@@ -277,6 +283,7 @@ class StripeController extends Controller
                 $stripeCache->customer_email = $stripeInvoicePaidDTO->data->object->customer_email;
                 $stripeCache->paid_at = $stripeInvoicePaidDTO->data->object->status_transitions->paid_at;
                 $stripeCache->description = $stripeInvoicePaidDTO->data->object->lines->data[0]->description;
+                $stripeCache->subscription_item = $stripeInvoicePaidDTO->data->object->lines->data[0]->parent->subscription_item_details->subscription_item;
 
                 Cache::set('stripeCache-' . $stripeCache->customer_id, $stripeCache);
                 if ($this->isStripeObjectFull($stripeCache)) {
@@ -373,6 +380,8 @@ class StripeController extends Controller
                 $subscription->stripe_price = null;
                 $subscription->stripe_product = null;
                 $subscription->plans_id = '91842dba-9965-42c9-af2a-07fef464b315';
+                $subscription->price = 0;
+                $subscription->stripe_subscription_item = '';
 
                 Log::info('subscription saved');
 
@@ -380,57 +389,49 @@ class StripeController extends Controller
 
                 break;
             case "customer.subscription.updated":
+                $metadata = new SubscriptionUpdatedMetadataDTO($body['data']['object']['items']['data'][0]['plan']['metadata']['plan_uuid']);
+
                 $planDTO = new PlanDTO(
                     $body['data']['object']['items']['data'][0]['plan']['id'],
                     $body['data']['object']['items']['data'][0]['plan']['amount'],
                     $body['data']['object']['items']['data'][0]['plan']['product'],
-                    $body['data']['object']['items']['data'][0]['plan']['metadata']['plan_uuid'],
+                    $metadata
                 );
 
                 $subscriptionItemsData = new SubscriptionItemsData(
                     $body['data']['object']['items']['data'][0]['id'],
                     $body['data']['object']['items']['data'][0]['current_period_end'],
                     $planDTO,
-                    $body['data']['object']['items']['data'][0]['plan']['subscription']
+                    $body['data']['object']['items']['data'][0]['subscription']
                 );
                 $subscriptionItems = new SubscriptionItems([$subscriptionItemsData]);
                 $objectDataDTO = new ObjectDTO(
                     $body['data']['object']['id'],
                     $body['data']['object']['customer'],
-                    $subscriptionItems
+                    $subscriptionItems,
+                    $body['data']['object']['status']
                 );
 
-                $defaultPaymentMethod = $body['data']['previous_attributes']['default_payment_method'];
 
-                if (!$defaultPaymentMethod || $defaultPaymentMethod === null) {
-                    $defaultPaymentMethod = '';
-                }
-
-                $planPreviousAttributes = new PlanDTO(
-                    $body['data']['previous_attributes']['items']['data'][0]['plan']['id'],
-                    $body['data']['previous_attributes']['items']['data'][0]['plan']['amount'],
-                    $body['data']['previous_attributes']['items']['data'][0]['plan']['product'],
-                    $body['data']['previous_attributes']['items']['data'][0]['plan']['metadata']['plan_uuid'],
-
-                );
-                $subscriptionItemsDataPreviousAttributes = new SubscriptionItemsData(
-                    $body['data']['previous_attributes']['items']['data'][0]['id'],
-                    $body['data']['previous_attributes']['items']['data'][0]['current_period_end'],
-                    $planPreviousAttributes,
-                    $body['data']['previous_attributes']['items']['data'][0]['current_period_end']
-                );
-                $subscriptionItemsPreviousAttribes = new SubscriptionItems([$subscriptionItemsDataPreviousAttributes]);
-                $previousAttribute = new PreviousAttributes($defaultPaymentMethod, $subscriptionItemsPreviousAttribes);
-
-                $dataDTO = new SubscriptionUpdatedDataDTO($objectDataDTO, $previousAttribute);
+                $dataDTO = new SubscriptionUpdatedDataDTO($objectDataDTO, null);
                 $subscriptionUpdatedDTO = new SubscriptionUpdatedDTO($body['id'], $body['type'], $dataDTO);
 
-                if (strlen($subscriptionUpdatedDTO->data->previous_attributes->default_payment_method) > 0) {
-                    $stripe = new StripeClient(config('services.stripe.secret'));
-                    $paymentMethod = $stripe->paymentMethods->retrieve($subscriptionUpdatedDTO->data->previous_attributes->default_payment_method);
 
-                    $brand = $paymentMethod->card->brand;
-                    $last4 = $paymentMethod->card->last4;
+                $defaultPaymentMethodExists = array_key_exists('default_payment_method', $body['data']['previous_attributes']);
+                $defaultPaymentMethodPrevious = '';
+
+                if ($defaultPaymentMethodExists) {
+                    $defaultPaymentMethodPrevious = $body['data']['previous_attributes']['default_payment_method'];
+                }
+
+                if (strlen($defaultPaymentMethodPrevious) > 0) {
+                    $stripe = new StripeClient(config('services.stripe.secret'));
+                    $customer = $stripe->customers->retrieve($subscriptionUpdatedDTO->data->object->customer);
+                    $defaultPaymentId = $customer->invoice_settings->default_payment_method;
+                    $defaultPayment = $stripe->paymentMethods->retrieve($defaultPaymentId);
+
+                    $brand = $defaultPayment->card->brand;
+                    $last4 = $defaultPayment->card->last4;
 
                     $subscription = Subscription::query()
                         ->where('stripe_user', '=', $subscriptionUpdatedDTO->data->object->customer)
@@ -440,20 +441,16 @@ class StripeController extends Controller
                     $subscription->last_four_digits = $last4;
 
                     $subscription->save();
-                    return;
+                    break;
                 }
 
                 $subscription = Subscription::query()
                     ->where('stripe_user', '=', $subscriptionUpdatedDTO->data->object->customer)
                     ->first();
 
-                $subscription->next_billing = gmdate('Y-m-d', $subscriptionUpdatedDTO->data->object->items->data[0]->current_period_end);
-                $subscription->stripe_price = $subscriptionUpdatedDTO->data->object->items->data[0]->plan->id;
-                $subscription->stripe_product = $subscriptionUpdatedDTO->data->object->items->data[0]->plan->product;
-
                 $plan = Plans::query()
                     ->where(
-                        'plan_uuid',
+                        'uuid',
                         '=',
                         $subscriptionUpdatedDTO
                             ->data
@@ -482,6 +479,16 @@ class StripeController extends Controller
                 }
 
                 $subscription->plans_id = $plan->uuid;
+                $subscription->next_billing = gmdate('Y-m-d', $subscriptionUpdatedDTO->data->object->items->data[0]->current_period_end);
+                $subscription->stripe_price = $subscriptionUpdatedDTO->data->object->items->data[0]->plan->id;
+                $subscription->stripe_product = $subscriptionUpdatedDTO->data->object->items->data[0]->plan->product;
+                $subscription->stripe_subscription_item = $subscriptionUpdatedDTO->data->object->items->data[0]->id;
+                $subscription->price = ($subscriptionUpdatedDTO->data->object->items->data[0]->plan->amount / 100);
+                $subscription->date_verified = date('Y/m/d');
+                $subscription->status = $subscriptionUpdatedDTO->data->object->status;
+
+                $subscription->save();
+
                 break;
             default:
                 Log::info('Method not founded for this event: ' . $body['type']);

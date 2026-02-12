@@ -12,4 +12,9 @@ class PreviousAttributes
         $this->default_payment_method = $default_payment_method;
         $this->items = $items;
     }
+
+    public function setDefaultPaymentMethod(string $default_payment_method)
+    {
+        $this->default_payment_method = $default_payment_method;
+    }
 }
