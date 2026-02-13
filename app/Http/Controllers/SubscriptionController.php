@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Mockery\Matcher\Subset;
 use Stripe\StripeClient;
 
 class SubscriptionController extends Controller
@@ -273,7 +274,7 @@ class SubscriptionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'return_url' => ['required', 'string', 'url'],
-            'customer' => ['required', 'string', 'exists:subscription,stripe_user']
+            'user_id' => ['required', 'string', 'exists:user,uuid']
         ]);
 
         if ($validator->fails()) {
@@ -283,12 +284,18 @@ class SubscriptionController extends Controller
             ]);
         }
 
-        $customer = $request->input('customer');
+        $userId = $request->input('user_id');
         $return_url = $request->input('return_url');
+        $subscription = Subscription::query()->where('user_id', '=', $userId)->first();
+
+        if (!$subscription || $subscription === null) return response()->json([
+            'message' => 'This user does not has subscription in our system'
+        ], 400);
+
 
         $stripe = new StripeClient(config('services.stripe.secret'));
         $session = $stripe->billingPortal->sessions->create([
-            'customer' => $customer,
+            'customer' => $subscription->stripe_user,
             'return_url' => $return_url,
             'flow_data' => [
                 'type' => 'payment_method_update'
@@ -301,11 +308,9 @@ class SubscriptionController extends Controller
     public function changeSubscriptionPlan(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'customer' => ['required', 'string', 'exists:subscription,stripe_user'],
+            'user_id' => ['required', 'string', 'exists:user,uuid'],
             'return_url' => ['required', 'string', 'url'],
-            'subscription' => ['required', 'string'],
             'price' => ['required', 'string'],
-            'item' => ['required', 'string']
         ]);
 
         if ($validator->fails()) {
@@ -315,24 +320,32 @@ class SubscriptionController extends Controller
             ]);
         }
 
-
-        $customer = $request->input('customer');
+        $userId = $request->input('user_id');
         $return_url = $request->input('return_url');
-        $subscription = $request->input('subscription');
         $price = $request->input('price');
-        $item = $request->input('item');
+
+
+        $subscription = Subscription::query()->where(
+            'user_id',
+            '=',
+            $userId
+        )->first();
+
+        if (!$subscription || $subscription === null) return response()->json([
+            'message' => 'Subscription was not found with this user'
+        ], 400);
 
         $stripe = new StripeClient(config('services.stripe.secret'));
         $session = $stripe->billingPortal->sessions->create([
-            'customer' => $customer,
+            'customer' => $subscription->stripe_user,
             'return_url' => $return_url,
             'flow_data' => [
                 'type' => 'subscription_update_confirm',
                 'subscription_update_confirm' => [
-                    'subscription' => $subscription,
+                    'subscription' => $subscription->stripe_subscription,
                     'items' => [
                         [
-                            "id" => $item,
+                            "id" => $subscription->stripe_subscription_item,
                             "price" => $price,
                             'quantity' => 1
                         ]
@@ -341,6 +354,6 @@ class SubscriptionController extends Controller
             ],
         ]);
 
-        return response()->json([ 'update_url' => $session->url ]);
+        return response()->json(['update_url' => $session->url]);
     }
 }

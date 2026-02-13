@@ -42,7 +42,6 @@ use App\Dto\Stripe\SubscriptionUpdated\DataDTO as SubscriptionUpdatedDataDTO;
 use App\Dto\Stripe\SubscriptionUpdated\MetadataDTO as SubscriptionUpdatedMetadataDTO;
 use App\Dto\Stripe\SubscriptionUpdated\ObjectDTO;
 use App\Dto\Stripe\SubscriptionUpdated\PlanDTO;
-use App\Dto\Stripe\SubscriptionUpdated\PreviousAttributes;
 use App\Dto\Stripe\SubscriptionUpdated\SubscriptionItems;
 use App\Dto\Stripe\SubscriptionUpdated\SubscriptionItemsData;
 use App\Dto\Stripe\SubscriptionUpdated\SubscriptionUpdatedDTO;
@@ -54,7 +53,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Mockery\Matcher\Subset;
 use Stripe\StripeClient;
 
 class StripeController extends Controller
@@ -143,6 +141,8 @@ class StripeController extends Controller
         $stripe = new StripeClient(config('services.stripe.secret'));
         $customer = $stripe->customers->retrieve($customerId);
         $defaultPaymentId = $customer->invoice_settings->default_payment_method;
+        if (!$defaultPaymentId || $defaultPaymentId === null) return;
+
         $defaultPayment = $stripe->paymentMethods->retrieve($defaultPaymentId);
 
         $brand = $defaultPayment->card->brand;
@@ -183,13 +183,19 @@ class StripeController extends Controller
 
         switch ($body['type']) {
             case "charge.succeeded":
-                $wallet = new WalletDTO($body['data']['object']['payment_method_details']['card']['wallet']['type']);
+                $walletHelper = $body['data']['object']['payment_method_details']['card']['wallet'];
+                $walletType = '';
+
+                if ($walletHelper !== null) {
+                    $walletType = $body['data']['object']['card']['wallet']['type'];
+                }
+                $wallet = new WalletDTO(null);
 
                 if (!$wallet) $wallet = null;
 
                 $cardCheckHelper = '';
 
-                if (strlen($wallet->type) > 0 && $wallet->type === 'google_pay')
+                if ($wallet && strlen($wallet->type) > 0 && $wallet->type === 'google_pay')
                     $cardCheckHelper = 'pass';
                 else
                     $cardCheckHelper = $body['data']['object']['payment_method_details']['card']['checks']['cvc_check'];
@@ -622,15 +628,14 @@ class StripeController extends Controller
 
                     $subscription->card_brand = $card->brand;
                     $subscription->last_four_digits = $card->last4;
-
                     $subscription->save();
+
                     break;
                 }
 
                 $paymentAttachedObject = new PaymentAttachedObjectDTO($body['data']['object']['customer']);
                 $paymentAttachedData = new PaymentAttachedDataDTO($paymentAttachedObject);
                 $paymentAttached = new PaymentAttachedDTO($paymentAttachedData, $body['id'], $body['type']);
-
 
                 $this->changePaymentMethodSubscription($paymentAttached->data->object->customer, null);
 
