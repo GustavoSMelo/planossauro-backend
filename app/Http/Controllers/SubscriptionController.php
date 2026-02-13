@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Mockery\Matcher\Subset;
+use Stripe\StripeClient;
 
 class SubscriptionController extends Controller
 {
@@ -26,7 +28,7 @@ class SubscriptionController extends Controller
                 'weekly_plans_used' => 0,
                 'date_verified' => null,
                 'next_billing' => null,
-                'status' => PlanStatus::ACTIVE,
+                'status' => PlanStatus::PAID->value,
                 'last_four_digits' => null,
                 'card_brand' => null,
                 'user_id' => $user->uuid,
@@ -42,7 +44,7 @@ class SubscriptionController extends Controller
             'weekly_plans_used' => 0,
             'date_verified' => null,
             'next_billing' => date('Y-m-d', strtotime('+1 month')),
-            'status' => PlanStatus::ACTIVE,
+            'status' => PlanStatus::PAID->value,
             'last_four_digits' => null,
             'card_brand' => null,
             'user_id' => $user->uuid,
@@ -95,7 +97,7 @@ class SubscriptionController extends Controller
                 'user_id' => $userUUID,
                 'daily_plans_used' => 0,
                 'weekly_plans_used' => 0,
-                'status' => PlanStatus::PROCESSING,
+                'status' => PlanStatus::PAID->value,
                 'stripe_user' => $stripeUser,
                 'stripe_subscription' => $stripeSubscription,
                 'stripe_price' => $stripePrice,
@@ -117,7 +119,7 @@ class SubscriptionController extends Controller
             'user_id' => $userUUID,
             'daily_plans_used' => 0,
             'weekly_plans_used' => 0,
-            'status' => PlanStatus::PROCESSING,
+            'status' => PlanStatus::PAID->value,
             'stripe_user' => $stripeUser,
             'stripe_subscription' => $stripeSubscription,
             'stripe_price' => $stripePrice,
@@ -164,7 +166,7 @@ class SubscriptionController extends Controller
             'user_id' => $userId,
             'daily_plans_used' => 0,
             'weekly_plans_used' => 0,
-            'status' => PlanStatus::PROCESSING,
+            'status' => PlanStatus::PAID->value,
             'stripe_user' => $stripeUser,
             'stripe_subscription' => $stripeSubscription,
             'stripe_price' => $stripePrice,
@@ -266,5 +268,92 @@ class SubscriptionController extends Controller
         return response()->json([
             'message' => "Subscription week tokens used updated with success"
         ]);
+    }
+
+    public function changePaymentMethod(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'return_url' => ['required', 'string', 'url'],
+            'user_id' => ['required', 'string', 'exists:user,uuid']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'Error in validation',
+                'errors' => $validator->errors()
+            ]);
+        }
+
+        $userId = $request->input('user_id');
+        $return_url = $request->input('return_url');
+        $subscription = Subscription::query()->where('user_id', '=', $userId)->first();
+
+        if (!$subscription || $subscription === null) return response()->json([
+            'message' => 'This user does not has subscription in our system'
+        ], 400);
+
+
+        $stripe = new StripeClient(config('services.stripe.secret'));
+        $session = $stripe->billingPortal->sessions->create([
+            'customer' => $subscription->stripe_user,
+            'return_url' => $return_url,
+            'flow_data' => [
+                'type' => 'payment_method_update'
+            ]
+        ]);
+
+        return response()->json(['update_url' => $session->url]);
+    }
+
+    public function changeSubscriptionPlan(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => ['required', 'string', 'exists:user,uuid'],
+            'return_url' => ['required', 'string', 'url'],
+            'price' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error in validation',
+                'errors' => $validator->errors()
+            ]);
+        }
+
+        $userId = $request->input('user_id');
+        $return_url = $request->input('return_url');
+        $price = $request->input('price');
+
+
+        $subscription = Subscription::query()->where(
+            'user_id',
+            '=',
+            $userId
+        )->first();
+
+        if (!$subscription || $subscription === null) return response()->json([
+            'message' => 'Subscription was not found with this user'
+        ], 400);
+
+        $stripe = new StripeClient(config('services.stripe.secret'));
+        $session = $stripe->billingPortal->sessions->create([
+            'customer' => $subscription->stripe_user,
+            'return_url' => $return_url,
+            'flow_data' => [
+                'type' => 'subscription_update_confirm',
+                'subscription_update_confirm' => [
+                    'subscription' => $subscription->stripe_subscription,
+                    'items' => [
+                        [
+                            "id" => $subscription->stripe_subscription_item,
+                            "price" => $price,
+                            'quantity' => 1
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+
+        return response()->json(['update_url' => $session->url]);
     }
 }

@@ -34,16 +34,19 @@ class Subscription extends Model
         'user_id',
         'plans_id',
         'card_brand',
+        'price',
         'stripe_subscription',
         'stripe_user',
         'stripe_price',
-        'stripe_product'
+        'stripe_product',
+        'stripe_subscription_item'
     ];
 
     protected $hidden = [
         'stripe_subscription',
         'stripe_user',
         'stripe_price',
-        'stripe_product'
+        'stripe_product',
+        'stripe_subscription_item'
     ];
 }

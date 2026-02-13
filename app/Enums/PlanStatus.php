@@ -3,9 +3,8 @@ namespace App\Enums;
 
 enum PlanStatus: string
 {
-    case ACTIVE = "Ativo";
-    case CANCELLED = "Cancelado";
-    case PROCESSING = 'Processando';
-    case PAYMENT_FAILED = 'Pagamento falho';
-    case PAYED = 'Pago';
+    case UNPAID = 'Unpaid';
+    case PAID = 'Paid';
+    case CANCELED = 'canceled';
+    case ACTIVE = 'active';
 }
