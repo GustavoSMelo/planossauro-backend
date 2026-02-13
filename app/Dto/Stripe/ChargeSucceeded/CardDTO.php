@@ -7,11 +7,13 @@ class CardDTO
     public string $brand;
     public string $last4;
     public CardChecksDTO $checks;
+    public ?WalletDTO $wallet = null;
 
-    public function __construct(string $brand, string $last4, CardChecksDTO $checks)
+    public function __construct(string $brand, string $last4, CardChecksDTO $checks, ?WalletDTO $wallet)
     {
         $this->brand = $brand;
         $this->last4 = $last4;
         $this->checks = $checks;
+        $this->wallet = $wallet;
     }
 }
