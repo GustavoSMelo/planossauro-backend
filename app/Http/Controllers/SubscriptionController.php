@@ -356,4 +356,24 @@ class SubscriptionController extends Controller
 
         return response()->json(['update_url' => $session->url]);
     }
+
+    public function cancelSubscription(string $subscriptionId)
+    {
+        if (!$subscriptionId || strlen($subscriptionId) <= 0) return response()->json([
+            'message' => 'subscription not founded'
+        ], 400);
+
+        $subscription = Subscription::query()->where('uuid', '=', $subscriptionId)->first();
+
+        if (!$subscription || $subscription === null) return response()->json([
+            'message' => 'subscription not founded'
+        ], 400);
+
+        $stripe = new StripeClient(config('services.stripe.secret'));
+        $stripe->subscriptions->cancel($subscription->stripe_subscription);
+
+        return response()->json([
+            'message' => 'Subscription deleted with success'
+        ]);
+    }
 }

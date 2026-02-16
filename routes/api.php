@@ -10,7 +10,6 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\Planning\ValidatePlanningID;
 use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
-use App\Http\Middleware\Subscription\ValidateStripeCustomerID;
 use App\Http\Middleware\Subscription\ValidateSubscriptionID;
 use App\Http\Middleware\ValidateUserTokenByBody;
 use App\Http\Middleware\ValidateUserTokenByBodyUserID;
@@ -107,12 +106,16 @@ Route::prefix('subscription')->middleware('auth:sanctum')->group(function () {
 
     Route::patch('/{planningType}/{subscriptionId}', [SubscriptionController::class, 'addPlanningUsedOnSubscription'])
         ->middleware(ValidateSubscriptionID::class);
+
+    Route::put('/change/payment/method', [SubscriptionController::class, 'changePaymentMethod'])
+        ->middleware(ValidateUserTokenByBodyUserID::class);
+
+    Route::put('/change/subscription/plan', [SubscriptionController::class, 'changeSubscriptionPlan'])
+        ->middleware(ValidateUserTokenByBodyUserID::class);
+
+    Route::delete('/cancel/{subscriptionId}', [SubscriptionController::class , 'cancelSubscription'])
+        ->middleware(ValidateSubscriptionID::class);
 });
-
-Route::put('/change/payment/method', [SubscriptionController::class, 'changePaymentMethod']);
-    // ->middleware(ValidateStripeCustomerID::class);
-
-Route::put('/change/subscription/plan', [SubscriptionController::class, 'changeSubscriptionPlan']);
 
 // Payment history routes
 Route::prefix('payment/history')->middleware('auth:sanctum')->group(function () {

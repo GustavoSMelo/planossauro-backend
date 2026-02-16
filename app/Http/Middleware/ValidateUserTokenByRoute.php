@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -20,12 +21,9 @@ class ValidateUserTokenByRoute
 
         $token = explode(' ', $tokenWithBearer)[1];
         $user = PersonalAccessToken::findToken($token)->tokenable;
-
         $requestUUID = $request->route('userUUID');
 
-        if ($requestUUID === $user->uuid) {
-            return $next($request);
-        }
+        if ($requestUUID === $user->uuid) return $next($request);
 
         return response()->json([
             'Error' => 'You do not have permission to see this route or informations'
