@@ -2,6 +2,7 @@
 
 use App\Enums\PlanStatus;
 use App\Models\Subscription;
+use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -27,4 +28,16 @@ Schedule::call(function () {
     ->daily()
     ->timezone('America/Sao_Paulo')
     ->name('reset_subscription_tokens')
+    ->withoutOverlapping();
+
+Schedule::call(function () {
+    $users = User::query()->where('deleted_at', '>=', date('Y-m-d'))->get();
+
+    foreach ($users as $user) {
+        $user->delete();
+    }
+})
+    ->daily()
+    ->timezone('America/Sao_Paulo')
+    ->name('delete_user_accounts')
     ->withoutOverlapping();

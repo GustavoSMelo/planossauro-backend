@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('planning', function (Blueprint $table) {
-            $table->date('deleted_at')->nullable(true);
-            $table->foreignUuid('user_id')->references('uuid')->on('user')->cascadeOnDelete();
+        Schema::table('user', function (Blueprint $table) {
+            $table->date('deleted_at')->nullable();
         });
     }
 
@@ -22,9 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('planning', function (Blueprint $table) {
+        Schema::table('user', function (Blueprint $table) {
             $table->dropColumn('deleted_at');
-            $table->dropColumn('user_id');
         });
     }
 };

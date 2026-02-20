@@ -28,8 +28,8 @@ return new class extends Migration
             $table->string('stripe_subscription_item')->nullable();
             $table->timestamps();
 
-            $table->foreignUuid('user_id')->unique()->references('uuid')->on('user');
-            $table->foreignUuid('plans_id')->unique()->references('uuid')->on('plans');
+            $table->foreignUuid('user_id')->unique()->references('uuid')->on('user')->cascadeOnDelete();
+            $table->foreignUuid('plans_id')->unique()->references('uuid')->on('plans')->cascadeOnDelete();
         });
     }
 

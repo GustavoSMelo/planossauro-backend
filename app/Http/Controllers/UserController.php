@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Resend\Laravel\Facades\Resend;
+use Stripe\StripeClient;
 
 class UserController extends Controller
 {
@@ -233,9 +235,34 @@ class UserController extends Controller
     public function destroy(string $userUUID)
     {
         try {
-            User::query()->delete($userUUID);
+            $user = User::query()->where('uuid', '=', $userUUID)->first();
 
-            return response()->json(['message' => 'User deleted with success']);
+            if (!$user || $user === null) return response()->json([
+                'error' => 'User with this uuid was not founded'
+            ], 404);
+
+            if (!$user->github_is_validated && !$user->google_is_validated) return response()->json([
+                'error' => 'To delete this account, you first need to have a google or github account validated'
+            ], 401);
+
+            $user->deleted_at = date('Y-m-d');
+            $user->save();
+
+            $subscription = Subscription::query()->where('user_id', '=', $user->uuid)->first();
+
+            if ($subscription->stripe_subscription) {
+                $stripe = new StripeClient(config('services.stripe.secret'));
+                $stripe->subscriptions->cancel($subscription->stripe_subscription);
+
+                $subscription->stripe_price = null;
+                $subscription->stripe_product = null;
+                $subscription->stripe_subscription = null;
+                $subscription->stripe_user = null;
+
+                $subscription->save();
+            }
+
+            return response()->json(['message' => 'User soft deleted with success']);
         } catch (\Exception $e) {
             return response(['error' => 'User not founded'], 400);
         }
@@ -367,6 +394,28 @@ class UserController extends Controller
             return response()->json(['message' => 'validation code is invalid'], 400);
         } catch (\Exception $e) {
             return response()->json(['message' => 'missing values or user not found', 'error' => $e], 400);
+        }
+    }
+
+    public function removeSoftDeleteUser(string $userUUID) {
+        try {
+            $user = User::query()->where('uuid', '=', $userUUID)->first();
+
+            if (!$user || $user === null) return response()->json([
+                'message' => 'user with this uuid was not founded'
+            ], 400);
+
+            $user->deleted_at = null;
+            $user->save();
+
+            return response()->json([
+                'message' => 'User restored with success'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'error in remove soft delete on user',
+                'error' => $e
+            ], 400);
         }
     }
 }

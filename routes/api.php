@@ -49,7 +49,12 @@ Route::prefix('user')->group(function () {
     Route::patch('/validate/{userUUID}', [UserController::class, 'validate'])
         ->middleware('auth:sanctum')
         ->middleware(ValidateUserTokenByRoute::class);
+
+    Route::patch('/restore/{userUUID}', [UserController::class, 'removeSoftDeleteUser'])
+        ->middleware('auth:sanctum')
+        ->middleware(ValidateUserTokenByRoute::class);
 });
+
 
 // Planning routes
 Route::prefix('planning')->middleware('auth:sanctum')->group(function () {
@@ -113,7 +118,7 @@ Route::prefix('subscription')->middleware('auth:sanctum')->group(function () {
     Route::put('/change/subscription/plan', [SubscriptionController::class, 'changeSubscriptionPlan'])
         ->middleware(ValidateUserTokenByBodyUserID::class);
 
-    Route::delete('/cancel/{subscriptionId}', [SubscriptionController::class , 'cancelSubscription'])
+    Route::delete('/cancel/{subscriptionId}', [SubscriptionController::class, 'cancelSubscription'])
         ->middleware(ValidateSubscriptionID::class);
 });
 

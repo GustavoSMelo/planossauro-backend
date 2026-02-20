@@ -25,9 +25,9 @@ return new class extends Migration
             $table->string('stripe_subscription')->nullable();
             $table->timestamps();
 
-            $table->foreignUuid('plan_id')->references('uuid')->on('plans');
-            $table->foreignUuid('user_id')->references('uuid')->on('user');
-            $table->foreignUuid('subscription_id')->references('uuid')->on('subscription');
+            $table->foreignUuid('plan_id')->references('uuid')->on('plans')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->references('uuid')->on('user')->cascadeOnDelete();
+            $table->foreignUuid('subscription_id')->references('uuid')->on('subscription')->cascadeOnDelete();
         });
     }
 

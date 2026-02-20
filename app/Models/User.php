@@ -43,7 +43,8 @@ class User extends Model
         'sms_is_validated',
         'google_validation_code',
         'google_is_validated',
-        'google_id'
+        'google_id',
+        'deleted_at'
     ];
 
     protected $hidden = [
