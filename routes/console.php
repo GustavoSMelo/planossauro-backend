@@ -18,9 +18,7 @@ Schedule::call(function () {
         if ($subscription->status === PlanStatus::PAID->value || $subscription->status === PlanStatus::ACTIVE->value) {
             $subscription->daily_plans_used = 0;
             $subscription->weekly_plans_used = 0;
-
-            if ($subscription->status === PlanStatus::ACTIVE->value)
-                $subscription->next_billing = date('Y-m-d', strtotime('+1 month'));
+            $subscription->next_billing = date('Y-m-d', strtotime('+1 month'));
             $subscription->save();
         }
     }
@@ -31,7 +29,7 @@ Schedule::call(function () {
     ->withoutOverlapping();
 
 Schedule::call(function () {
-    $users = User::query()->where('deleted_at', '>=', date('Y-m-d'))->get();
+    $users = User::query()->where('deleted_at', '<=', date('Y-m-d', strtotime('-1 month')))->get();
 
     foreach ($users as $user) {
         $user->delete();

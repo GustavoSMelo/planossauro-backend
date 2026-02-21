@@ -22,8 +22,6 @@ Route::get('/health', [HealthController::class, 'check']);
 
 // User routes
 Route::prefix('user')->group(function () {
-    Route::get('/all', [UserController::class, 'index']);
-
     Route::post('', [UserController::class, 'store']);
 
     Route::get('/{userUUID}', [UserController::class, 'show'])

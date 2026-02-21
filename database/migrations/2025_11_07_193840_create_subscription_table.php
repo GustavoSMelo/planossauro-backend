@@ -29,7 +29,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreignUuid('user_id')->unique()->references('uuid')->on('user')->cascadeOnDelete();
-            $table->foreignUuid('plans_id')->unique()->references('uuid')->on('plans')->cascadeOnDelete();
+            $table->foreignUuid('plans_id')->references('uuid')->on('plans')->cascadeOnDelete();
         });
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -13,6 +14,9 @@ class AuthController extends Controller
             $clientId = env('GITHUB_CLIENT_ID');
             $clientSecret = env('GITHUB_SECRET_ID');
 
+            /**
+             * @var mixed
+             */
             $accessResponse = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
@@ -24,9 +28,11 @@ class AuthController extends Controller
                     'code' => $code,
                     'redirect_uri' =>  config('app.frontend_url') . '/callback/github',
                 ]);
-
             $accessToken = $accessResponse->json('access_token');
 
+            /**
+             * @var mixed
+             */
             $response = Http::withHeader('Authorization', "Bearer $accessToken")->get('https://api.github.com/user');
 
             return response()->json([
@@ -43,6 +49,9 @@ class AuthController extends Controller
 
     public function githubAuth(String $token)
     {
+        /**
+         * @var mixed
+         */
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token
         ])->get('https://api.github.com/user');
@@ -75,24 +84,39 @@ class AuthController extends Controller
     public function googleAuth(String $token)
     {
         try {
+            /**
+             * @var mixed
+             */
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token
             ])->get('https://openidconnect.googleapis.com/v1/userinfo');
 
+            Log::info('resposta ' . $response->body());
+
             $email = json_decode($response->body())->email;
-            $subId = json_decode($response->body())->sub;
+            $subId = (int) json_decode($response->body())->sub;
 
             $user = User::query()
                 ->where('google_email', '=', $email)
-                ->where('google_id', '=', $subId)
                 ->first();
 
-            if (!$user || empty($user)) {
+            Log::info('user finded: ' . $user);
+            Log::info('user finded: ' . $user->google_id);
+            Log::info('tokn finded: ' . $subId);
+
+            if (!$user || empty($user) || $user === null) {
                 return response()->json([
                     'message' => 'User not founded',
                     'error' => 'Unauthenticated'
                 ], 401);
             }
+
+            if ($user->google_id !== $subId || $user['google_id'] !== $subId) return response()->json([
+                'message' => 'Google id is invalid',
+                'error' => 'Unauthenticated'
+            ], 401);
+
+            Log::info('Usuario: ' . $user);
 
             $user->tokens()->delete();
             $sactumToken = $user->createToken('auth');

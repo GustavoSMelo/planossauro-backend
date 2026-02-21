@@ -9,7 +9,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use Mockery\Matcher\Subset;
 use Stripe\StripeClient;
 
 class SubscriptionController extends Controller
@@ -206,7 +205,10 @@ class SubscriptionController extends Controller
     public function show(string $userUUID)
     {
         $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
-        $plan = Plans::query('uuid', '=', $subscription->plans_id)->first();
+        $plan = null;
+
+        if ($subscription && $subscription->plans_id)
+            $plan = Plans::query('uuid', '=', $subscription->plans_id)->first();
 
         return response()->json(['subscription' => $subscription, 'plan' => $plan]);
     }
