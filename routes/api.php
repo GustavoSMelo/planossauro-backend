@@ -51,6 +51,10 @@ Route::prefix('user')->group(function () {
     Route::patch('/restore/{userUUID}', [UserController::class, 'removeSoftDeleteUser'])
         ->middleware('auth:sanctum')
         ->middleware(ValidateUserTokenByRoute::class);
+
+    Route::patch('/unlink/{userUUID}', [UserController::class, 'unlinkAccounts'])
+        ->middleware('auth:sanctum')
+        ->middleware(ValidateUserTokenByRoute::class);
 });
 
 

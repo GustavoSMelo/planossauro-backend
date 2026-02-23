@@ -53,6 +53,10 @@ class User extends Model
         'sms_validation_code'
     ];
 
+    protected $casts = [
+        'google_id' => 'string'
+    ];
+
     public static function booted()
     {
         static::creating(function ($model) {

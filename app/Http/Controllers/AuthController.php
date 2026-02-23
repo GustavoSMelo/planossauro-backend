@@ -94,7 +94,12 @@ class AuthController extends Controller
             Log::info('resposta ' . $response->body());
 
             $email = json_decode($response->body())->email;
-            $subId = (int) json_decode($response->body())->sub;
+            $subId = (string) json_decode(
+                $response->body(),
+                false,
+                512,
+                JSON_BIGINT_AS_STRING
+            )->sub;
 
             $user = User::query()
                 ->where('google_email', '=', $email)
