@@ -359,7 +359,7 @@ class StripeController extends Controller
 
                 break;
             case "checkout.session.completed":
-                $metadataUUID = $body['data']['object']['metadata']['uuid_plan'];
+                $metadataUUID = $body['data']['object']['metadata']['plan_uuid'];
 
                 if (!$metadataUUID || $metadataUUID === null || $metadataUUID === '')
                     $metadataUUID = '';
@@ -386,7 +386,7 @@ class StripeController extends Controller
 
                 if ($stripeCache) {
 
-                    $stripeCache->plan_uuid = $checkoutSession->data->object->metadata->uuid_plan;
+                    $stripeCache->plan_uuid = $checkoutSession->data->object->metadata->plan_uuid;
                     $stripeCache->customer_id = $checkoutSession->data->object->customer;
 
                     if ($this->isStripeObjectFull($stripeCache)) {
@@ -411,7 +411,7 @@ class StripeController extends Controller
                     null,
                     null,
                     null,
-                    $checkoutSession->data->object->metadata->uuid_plan,
+                    $checkoutSession->data->object->metadata->plan_uuid,
                     null,
                     null
                 );

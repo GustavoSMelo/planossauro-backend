@@ -258,17 +258,18 @@ class SubscriptionController extends Controller
             ]);
         }
 
-        if ($subscription->daily_plans_used >= $plan->amount_planning_day)
+        if ($subscription->daily_plans_used >= $plan->amount_planning_day) {
             return response()->json([
                 'message' => 'Used all weekly token'
             ], 403);
+        }
 
         $plansUsed = $subscription->daily_plans_used + 1;
-        $subscription->weekly_plans_used = $plansUsed;
+        $subscription->daily_plans_used = $plansUsed;
         $subscription->save();
 
         return response()->json([
-            'message' => "Subscription week tokens used updated with success"
+            'message' => "Subscription daily tokens used updated with success"
         ]);
     }
 

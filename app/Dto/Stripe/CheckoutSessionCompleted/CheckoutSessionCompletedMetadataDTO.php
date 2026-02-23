@@ -4,10 +4,10 @@ namespace App\Dto\Stripe\CheckoutSessionCompleted;
 
 class CheckoutSessionCompletedMetadataDTO
 {
-    public string $uuid_plan;
+    public string $plan_uuid;
 
-    public function __construct(string $uuid_plan)
+    public function __construct(string $plan_uuid)
     {
-        $this->uuid_plan = $uuid_plan;
+        $this->plan_uuid = $plan_uuid;
     }
 }
