@@ -23,7 +23,7 @@ class PlansSeeder extends Seeder
 
         Plans::query()->create([
             'price' => 20.00,
-            'plan_name' => 'essencial',
+            'plan_name' => 'essential',
             'amount_planning_day' => 10,
             'amount_planning_week' => 10,
             'has_cloud_save' => true,
@@ -37,6 +37,15 @@ class PlansSeeder extends Seeder
             'amount_planning_week' => 90,
             'has_cloud_save' => true,
             'uuid' => '11eab11f-bf6b-4129-a241-d2feed7a2376',
+        ]);
+
+        Plans::query()->create([
+            'price' => 0,
+            'plan_name' => 'adm',
+            'amount_planning_day' => 180,
+            'amount_planning_week' => 180,
+            'has_cloud_save' => true,
+            'uuid' => '034fbe0b-6eb4-4fb3-b4af-5448e8cefebe',
         ]);
     }
 }

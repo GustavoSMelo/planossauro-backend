@@ -7,6 +7,7 @@ use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\SupportEmailsController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\Planning\ValidatePlanningID;
 use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
@@ -142,6 +143,10 @@ Route::prefix('payment/history')->middleware('auth:sanctum')->group(function () 
         ->middleware(ValidatePaymentHistoryID::class);
 });
 
+Route::post('/support/email/{userUUID}', [SupportEmailsController::class, 'createAndSendEmail'])
+    ->middleware('auth:sanctum')
+    ->middleware(ValidateUserTokenByRoute::class);
+
 Route::post('/webhook/payment', [StripeController::class, 'handler']);
 
 // Auth routes
@@ -149,4 +154,4 @@ Route::get('/token/github/{code}', [AuthController::class, 'githubAccessToken'])
 Route::get('/auth/github/{token}', [AuthController::class, 'githubAuth']);
 Route::get('/auth/google/{token}', [AuthController::class, 'googleAuth']);
 Route::delete('/logout/{userUUID}', [AuthController::class, 'logout'])
-    ->middleware('auth:sactum');
+    ->middleware('auth:sanctum');

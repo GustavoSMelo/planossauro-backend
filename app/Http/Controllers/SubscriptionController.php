@@ -327,7 +327,6 @@ class SubscriptionController extends Controller
         $return_url = $request->input('return_url');
         $price = $request->input('price');
 
-
         $subscription = Subscription::query()->where(
             'user_id',
             '=',
