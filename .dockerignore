@@ -1,0 +1,9 @@
+./vendor
+./node_modules
+./vscode
+.editorconfig
+_ide_helper.php
+_ide_helper_models.php
+api.docs.md
+Planossauro.postman_collection.json
+README.md
