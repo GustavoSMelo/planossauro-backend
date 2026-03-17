@@ -21,7 +21,7 @@
     </head>
     <body>
         <div class="bg-gray-200 flex items-center justify-center">
-            <h1 class="text-pink-600">Planeja.ai</h1>
+            <h1 class="text-pink-600">Planossauro</h1>
             <p>Ola, Codigo requerido esta logo abaixo: </p>
             <h2 class="text-blue-950">{{ $validation_code }}</h2>
         </div>

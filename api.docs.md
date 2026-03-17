@@ -1,6 +1,6 @@
-# Planeja.AI - API Docs - MD
+# Planossauro - API Docs - MD
 
-This markdown file is the API documentation of Planeja.AI project
+This markdown file is the API documentation of Planossauro project
 
 __Base URL:__ `http://localhost:8000/api`
 

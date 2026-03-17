@@ -24,8 +24,14 @@ class Support extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct($files, string $userUUID, string $title, string $category, string $ticketId, string $description)
-    {
+    public function __construct(
+        $files,
+        string $userUUID,
+        string $title,
+        string $category,
+        string $ticketId,
+        string $description,
+    ) {
         $this->files = $files;
         $this->userUUID = $userUUID;
         $this->title = $title;
@@ -54,6 +60,6 @@ class Support extends Mailable
 
     public function build()
     {
-        return $this->subject('Planeja.AI - support')->view('mail.support');
+        return $this->subject("Planossauro - support")->view("mail.support");
     }
 }

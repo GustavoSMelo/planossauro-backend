@@ -21,7 +21,7 @@
     </head>
     <body>
         <div class="bg-gray-200 flex items-center justify-center">
-            <h1 class="text-pink-600">Planeja.ai - Support Ticket</h1>
+            <h1 class="text-pink-600">Planossauro - Support Ticket</h1>
             <p>
                 Uuid: {{ $userUUID }} <br />
                 TicketId: {{ $ticketId }} <br />

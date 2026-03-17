@@ -346,15 +346,18 @@ class PlanningController extends Controller
         $response = Http::withHeaders([
             "Content-Type" => "application/json",
             "Authorization" => "Bearer " . config("services.openai.secret"),
-        ])->post("https://nano-gpt.com/api/v1/chat/completions", [
-            "model" => "gpt-oss-120b",
-            "messages" => [
-                [
-                    "content" => $prompt,
-                    "role" => "user",
+        ])
+            ->timeout(120)
+            ->retry(3, 1000)
+            ->post("https://nano-gpt.com/api/v1/chat/completions", [
+                "model" => "gpt-oss-120b",
+                "messages" => [
+                    [
+                        "content" => $prompt,
+                        "role" => "user",
+                    ],
                 ],
-            ],
-        ]);
+            ]);
 
         if (!$response->successful()) {
             return response()->json(
