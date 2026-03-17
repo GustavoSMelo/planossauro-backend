@@ -137,7 +137,7 @@ class UserController extends Controller
                 ->where(function ($query) use ($github_email, $google_email) {
                     if ($github_email) {
                         $query
-                            ->where("github", "=", null)
+                            ->where("github_email", "=", null)
                             ->where("google_email", "=", $github_email);
                     }
                     if ($google_email) {

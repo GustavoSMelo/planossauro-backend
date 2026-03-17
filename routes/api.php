@@ -18,8 +18,10 @@ use App\Http\Middleware\ValidateUserTokenByRoute;
 use Illuminate\Support\Facades\Route;
 
 // Health routes
-Route::get("", [HealthController::class, "check"]);
-Route::get("/health", [HealthController::class, "check"]);
+Route::get("", [HealthController::class, "check"])->middleware("throttle:20,1");
+Route::get("/health", [HealthController::class, "check"])->middleware(
+    "throttle:20,1",
+);
 
 // User routes
 Route::prefix("user")->group(function () {
@@ -75,6 +77,7 @@ Route::prefix("user")->group(function () {
 
 // Planning routes
 Route::prefix("planning")
+    ->middleware("throttle:100,1")
     ->middleware("auth:sanctum")
     ->group(function () {
         Route::post("/search/{userUUID}", [
@@ -120,13 +123,16 @@ Route::prefix("planning")
     });
 
 // Plans routes
-Route::prefix("plans")->group(function () {
-    Route::get("/", [PlansController::class, "index"]);
-    Route::get("/{uuid}", [PlansController::class, "show"]);
-});
+Route::prefix("plans")
+    ->group(function () {
+        Route::get("/", [PlansController::class, "index"]);
+        Route::get("/{uuid}", [PlansController::class, "show"]);
+    })
+    ->middleware("throttle:40:1");
 
 // Subscription routes
 Route::prefix("subscription")
+    ->middleware("throttle:100,1")
     ->middleware("auth:sanctum")
     ->group(function () {
         Route::post("/assign/free/{userUUID}", [
@@ -182,6 +188,7 @@ Route::prefix("subscription")
 
 // Payment history routes
 Route::prefix("payment/history")
+    ->middleware("throttle:100,1")
     ->middleware("auth:sanctum")
     ->group(function () {
         Route::get("/{userUUID}", [
@@ -214,6 +221,7 @@ Route::post("/support/email/{userUUID}", [
     SupportEmailsController::class,
     "createAndSendEmail",
 ])
+    ->middleware("throttle:20,1")
     ->middleware("auth:sanctum")
     ->middleware(ValidateUserTokenByRoute::class);
 
@@ -223,10 +231,15 @@ Route::post("/webhook/payment", [StripeController::class, "handler"]);
 Route::get("/token/github/{code}", [
     AuthController::class,
     "githubAccessToken",
-]);
-Route::get("/auth/github/{token}", [AuthController::class, "githubAuth"]);
-Route::get("/auth/google/{token}", [AuthController::class, "googleAuth"]);
-Route::delete("/logout/{userUUID}", [
+])->middleware("throttle:20,1");
+Route::get("/auth/github/{token}", [
     AuthController::class,
-    "logout",
-])->middleware("auth:sanctum");
+    "githubAuth",
+])->middleware("throttle:20,1");
+Route::get("/auth/google/{token}", [
+    AuthController::class,
+    "googleAuth",
+])->middleware("throttle:20,1");
+Route::delete("/logout/{userUUID}", [AuthController::class, "logout"])
+    ->middleware("throttle:10,1")
+    ->middleware("auth:sanctum");

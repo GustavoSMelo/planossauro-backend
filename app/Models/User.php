@@ -7,20 +7,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Model
+class User extends Authenticatable
 {
     use HasUuids, HasApiTokens, Notifiable;
 
     /**
      * @var string
      */
-    protected $primaryKey = 'uuid';
+    protected $primaryKey = "uuid";
 
     /**
      * @var string
      */
-    protected $table = 'user';
+    protected $table = "user";
 
     /**
      * @var bool
@@ -31,30 +32,30 @@ class User extends Model
      * @var array<string, string, string, string>
      */
     protected $fillable = [
-        'uuid',
-        'google_email',
-        'github_email',
-        'github_id',
-        'github_validation_code',
-        'github_is_validated',
-        'full_name',
-        'cellphone_number',
-        'sms_validation_code',
-        'sms_is_validated',
-        'google_validation_code',
-        'google_is_validated',
-        'google_id',
-        'deleted_at'
+        "uuid",
+        "google_email",
+        "github_email",
+        "github_id",
+        "github_validation_code",
+        "github_is_validated",
+        "full_name",
+        "cellphone_number",
+        "sms_validation_code",
+        "sms_is_validated",
+        "google_validation_code",
+        "google_is_validated",
+        "google_id",
+        "deleted_at",
     ];
 
     protected $hidden = [
-        'github_validation_code',
-        'google_validation_code',
-        'sms_validation_code'
+        "github_validation_code",
+        "google_validation_code",
+        "sms_validation_code",
     ];
 
     protected $casts = [
-        'google_id' => 'string'
+        "google_id" => "string",
     ];
 
     public static function booted()

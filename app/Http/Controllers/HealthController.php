@@ -10,21 +10,23 @@ class HealthController extends Controller
     public function check()
     {
         $pdo = DB::connection()->getPdo();
-        $githubResponse = Http::get('https://api.github.com');
+        // $githubResponse = Http::get("https://api.github.com");
 
         return response()->json([
-            'api' => [
+            "api" => [
                 "status" => 200,
-                "message" => 'ok',
+                "message" => "ok",
             ],
-            'database' => [
+            "database" => [
                 "status" => $pdo ? 200 : 500,
-                "message" => $pdo ? 'ok' : 'Error in database, connection not running'
+                "message" => $pdo
+                    ? "ok"
+                    : "Error in database, connection not running",
             ],
-            'github_api' => [
-                'status' => $githubResponse->status(),
-                'message' => $githubResponse->body() && $githubResponse->status() === 200 ? 'ok' : 'Github API is offline'
-            ],
+            // 'github_api' => [
+            //     'status' => $githubResponse->status(),
+            //     'message' => $githubResponse->body() && $githubResponse->status() === 200 ? 'ok' : 'Github API is offline'
+            // ],
         ]);
     }
 }
