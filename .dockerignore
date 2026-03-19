@@ -1,9 +1,17 @@
 ./vendor
 ./node_modules
 ./vscode
+./codex
+./claude
+./opencode
+./zed
+./idea
 .editorconfig
 _ide_helper.php
 _ide_helper_models.php
 api.docs.md
 Planossauro.postman_collection.json
 README.md
+#.env
+#.env.*
+.seeded

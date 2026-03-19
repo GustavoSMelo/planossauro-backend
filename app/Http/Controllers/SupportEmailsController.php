@@ -72,7 +72,7 @@ class SupportEmailsController extends Controller
                     "<" .
                     config("services.resend.mail") .
                     ">",
-                "to" => "suporte.planossauro@gmail.com",
+                "to" => config("app.support_email"),
                 "subject" => "Planeja.ai - Support",
                 "attachments" => $attachments,
                 "html" => view("mail.support", [

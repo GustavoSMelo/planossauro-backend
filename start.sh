@@ -5,8 +5,10 @@ until php artisan tinker --execute="DB::connection()->getPdo()"; do
     sleep 2
 done
 
-php artisan migrate
-php artisan db:seed
+echo "Connected to database"
+php artisan config:clear
+php artisan cache:clear
+php artisan migrate --seed
 
 php-fpm -D
 nginx -g "daemon off;"
