@@ -314,12 +314,17 @@ class UserController extends Controller
                 );
             }
 
+            if (!$userFinded->github_email) {
+                $userFinded->github_id = $request->input("github_id");
+            }
+            if (!$userFinded->google_email) {
+                $userFinded->google_id = (string) $request->input("google_id");
+            }
+
             $userFinded->full_name = $request->input("full_name");
             $userFinded->github_email = $request->input("github_email");
             $userFinded->google_email = $request->input("google_email");
             $userFinded->cellphone_number = $request->input("cellphone_number");
-            $userFinded->github_id = $request->input("github_id");
-            $userFinded->google_id = (string) $request->input("google_id");
             $userFinded->github_validation_code = rand(10000, 99999);
             $userFinded->google_validation_code = rand(10000, 99999);
             $userFinded->github_is_validated =
