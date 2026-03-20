@@ -18,9 +18,9 @@ use App\Http\Middleware\ValidateUserTokenByRoute;
 use Illuminate\Support\Facades\Route;
 
 // Health routes
-Route::get("", [HealthController::class, "check"])->middleware("throttle:5,1");
+Route::get("", [HealthController::class, "check"])->middleware("throttle:20,1");
 Route::get("/health", [HealthController::class, "check"])->middleware(
-    "throttle:5,1",
+    "throttle:20,1",
 );
 
 // User routes
