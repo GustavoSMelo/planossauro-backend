@@ -10,5 +10,7 @@ php artisan config:clear
 php artisan cache:clear
 php artisan migrate --seed
 
+* * * * * cd /app && php artisan schedule:run >> /dev/null 2>&1
+
 php-fpm -D
 nginx -g "daemon off;"
