@@ -15,217 +15,271 @@ class SubscriptionController extends Controller
 {
     public function assignFreePlanToUser(string $userUUID)
     {
-        $user = User::query()->where('uuid', '=', $userUUID)->first();
-        if (!$user) return response()->json(['message' => 'User with this is does not exists'], 404);
+        $user = User::query()->where("uuid", "=", $userUUID)->first();
+        if (!$user) {
+            return response()->json(
+                ["message" => "User with this is does not exists"],
+                404,
+            );
+        }
 
-        $plans = Plans::query()->where('price', '=', 0)->first();
-        $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
+        $plans = null;
+
+        if (config("app.env") === "local") {
+            $plans = Plans::query()->where("plan_name", "=", "adm")->first();
+        } else {
+            $plans = Plans::query()->where("price", "=", 0)->first();
+        }
+
+        $subscription = Subscription::query()
+            ->where("user_id", "=", $userUUID)
+            ->first();
 
         if ($subscription) {
+            if ($subscription->stripe_subscription) {
+                return response()->json(
+                    ["message" => "User already has a subscription"],
+                    200,
+                );
+            }
+
             $subscription->update([
-                'daily_plans_used' => 0,
-                'weekly_plans_used' => 0,
-                'date_verified' => null,
-                'next_billing' => null,
-                'status' => PlanStatus::PAID->value,
-                'last_four_digits' => null,
-                'card_brand' => null,
-                'user_id' => $user->uuid,
-                'plans_id' => $plans->uuid
+                "daily_plans_used" => 0,
+                "weekly_plans_used" => 0,
+                "date_verified" => null,
+                "next_billing" => null,
+                "status" => PlanStatus::PAID->value,
+                "last_four_digits" => null,
+                "card_brand" => null,
+                "user_id" => $user->uuid,
+                "plans_id" => $plans->uuid,
             ]);
             $subscription->save();
 
-            return response()->json(['message' => 'Plan downgraded with success']);
+            return response()->json([
+                "message" => "Plan downgraded with success",
+            ]);
         }
 
         Subscription::create([
-            'daily_plans_used' => 0,
-            'weekly_plans_used' => 0,
-            'date_verified' => null,
-            'next_billing' => date('Y-m-d', strtotime('+1 month')),
-            'status' => PlanStatus::PAID->value,
-            'last_four_digits' => null,
-            'card_brand' => null,
-            'user_id' => $user->uuid,
-            'plans_id' => $plans->uuid
+            "daily_plans_used" => 0,
+            "weekly_plans_used" => 0,
+            "date_verified" => null,
+            "next_billing" => date("Y-m-d", strtotime("+1 month")),
+            "status" => PlanStatus::PAID->value,
+            "last_four_digits" => null,
+            "card_brand" => null,
+            "user_id" => $user->uuid,
+            "plans_id" => $plans->uuid,
         ]);
 
-        return response()->json(['Plan assigned with success']);
+        return response()->json(["Plan assigned with success"]);
     }
 
     public function assignPlanToUser(string $userUUID, Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'plans_id' => ['string', 'required', 'uuid', 'exists:plans,uuid'],
-            'last_four_digits' => ['required', 'numeric'],
-            'card_brand' => ['required', 'string'],
-            'next_billing' => ['required', 'date', 'after_or_equal:today'],
-            'date_verified' => ['required', 'date', 'after_or_equal:today'],
-            'card_brand' => ['nullable', 'string'],
-            'stripe_user' => ['nullable', 'string'],
-            'stripe_price' => ['nullable', 'string'],
-            'stripe_product' => ['nullable', 'string'],
-            'stripe_subscription' => ['nullable', 'string']
+            "plans_id" => ["string", "required", "uuid", "exists:plans,uuid"],
+            "last_four_digits" => ["required", "numeric"],
+            "card_brand" => ["required", "string"],
+            "next_billing" => ["required", "date", "after_or_equal:today"],
+            "date_verified" => ["required", "date", "after_or_equal:today"],
+            "card_brand" => ["nullable", "string"],
+            "stripe_user" => ["nullable", "string"],
+            "stripe_price" => ["nullable", "string"],
+            "stripe_product" => ["nullable", "string"],
+            "stripe_subscription" => ["nullable", "string"],
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Error in validation',
-                'errors' => $validator->errors()
-            ], 422);
+            return response()->json(
+                [
+                    "message" => "Error in validation",
+                    "errors" => $validator->errors(),
+                ],
+                422,
+            );
         }
 
-        $plansId = $request->input('plans_id');
-        $lastFourDigits = $request->input('last_four_digits');
-        $nextBilling = $request->input('next_billing');
-        $dateVerified = $request->input('date_verified');
-        $stripeUser = $request->input('stripe_user');
-        $stripeSubscription = $request->input('stripe_subscription');
-        $stripePrice = $request->input('stripe_price');
-        $stripeProduct = $request->input('stripe_product');
-        $cardBrand = $request->input('card_brand');
+        $plansId = $request->input("plans_id");
+        $lastFourDigits = $request->input("last_four_digits");
+        $nextBilling = $request->input("next_billing");
+        $dateVerified = $request->input("date_verified");
+        $stripeUser = $request->input("stripe_user");
+        $stripeSubscription = $request->input("stripe_subscription");
+        $stripePrice = $request->input("stripe_price");
+        $stripeProduct = $request->input("stripe_product");
+        $cardBrand = $request->input("card_brand");
 
-        $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
+        $subscription = Subscription::query()
+            ->where("user_id", "=", $userUUID)
+            ->first();
 
         if ($subscription) {
             $subscription->update([
-                'next_billing' => $nextBilling,
-                'date_verified' => $dateVerified,
-                'last_four_digits' => $lastFourDigits,
-                'plans_id' => $plansId,
-                'user_id' => $userUUID,
-                'daily_plans_used' => 0,
-                'weekly_plans_used' => 0,
-                'status' => PlanStatus::PAID->value,
-                'stripe_user' => $stripeUser,
-                'stripe_subscription' => $stripeSubscription,
-                'stripe_price' => $stripePrice,
-                'stripe_product' => $stripeProduct,
-                'card_brand' => $cardBrand
+                "next_billing" => $nextBilling,
+                "date_verified" => $dateVerified,
+                "last_four_digits" => $lastFourDigits,
+                "plans_id" => $plansId,
+                "user_id" => $userUUID,
+                "daily_plans_used" => 0,
+                "weekly_plans_used" => 0,
+                "status" => PlanStatus::PAID->value,
+                "stripe_user" => $stripeUser,
+                "stripe_subscription" => $stripeSubscription,
+                "stripe_price" => $stripePrice,
+                "stripe_product" => $stripeProduct,
+                "card_brand" => $cardBrand,
             ]);
 
             $subscription->save();
             return response()->json([
-                'message' => 'Plan updated with success'
+                "message" => "Plan updated with success",
             ]);
         }
 
         Subscription::create([
-            'next_billing' => $nextBilling,
-            'date_verified' => $dateVerified,
-            'last_four_digits' => $lastFourDigits,
-            'plans_id' => $plansId,
-            'user_id' => $userUUID,
-            'daily_plans_used' => 0,
-            'weekly_plans_used' => 0,
-            'status' => PlanStatus::PAID->value,
-            'stripe_user' => $stripeUser,
-            'stripe_subscription' => $stripeSubscription,
-            'stripe_price' => $stripePrice,
-            'stripe_product' => $stripeProduct,
-            'card_brand' => $cardBrand
+            "next_billing" => $nextBilling,
+            "date_verified" => $dateVerified,
+            "last_four_digits" => $lastFourDigits,
+            "plans_id" => $plansId,
+            "user_id" => $userUUID,
+            "daily_plans_used" => 0,
+            "weekly_plans_used" => 0,
+            "status" => PlanStatus::PAID->value,
+            "stripe_user" => $stripeUser,
+            "stripe_subscription" => $stripeSubscription,
+            "stripe_price" => $stripePrice,
+            "stripe_product" => $stripeProduct,
+            "card_brand" => $cardBrand,
         ]);
 
         return response()->json([
-            'message' => 'Plan assigned with success'
+            "message" => "Plan assigned with success",
         ]);
     }
 
-    public function updatePlan(string $subscriptionId, string $userId, Request $request)
-    {
-        $subscription = Subscription::query()->where('uuid', '=', $subscriptionId)->first();
+    public function updatePlan(
+        string $subscriptionId,
+        string $userId,
+        Request $request,
+    ) {
+        $subscription = Subscription::query()
+            ->where("uuid", "=", $subscriptionId)
+            ->first();
         $request->validate([
-            'plans_id' => ['string', 'required', 'uuid', 'exists:plans,uuid'],
-            'last_four_digits' => ['required', 'numeric'],
-            'next_billing' => ['required', 'date', 'after_or_equal:today'],
-            'card_brand' => ['card_brand', 'string'],
-            'date_verified' => ['required', 'date', 'after_or_equal:today'],
-            'card_brand' => ['nullable', 'string'],
-            'stripe_user' => ['nullable', 'string'],
-            'stripe_price' => ['nullable', 'string'],
-            'stripe_product' => ['nullable', 'string'],
-            'stripe_subscription' => ['nullable', 'string']
+            "plans_id" => ["string", "required", "uuid", "exists:plans,uuid"],
+            "last_four_digits" => ["required", "numeric"],
+            "next_billing" => ["required", "date", "after_or_equal:today"],
+            "card_brand" => ["card_brand", "string"],
+            "date_verified" => ["required", "date", "after_or_equal:today"],
+            "card_brand" => ["nullable", "string"],
+            "stripe_user" => ["nullable", "string"],
+            "stripe_price" => ["nullable", "string"],
+            "stripe_product" => ["nullable", "string"],
+            "stripe_subscription" => ["nullable", "string"],
         ]);
 
-        $plansId = $request->input('plans_id');
-        $lastFourDigits = $request->input('last_four_digits');
-        $nextBilling = $request->input('next_billing');
-        $dateVerified = $request->input('date_verified');
-        $stripeUser = $request->input('stripe_user');
-        $stripeSubscription = $request->input('stripe_subscription');
-        $stripePrice = $request->input('stripe_price');
-        $stripeProduct = $request->input('stripe_product');
-        $cardBrand = $request->input('card_brand');
+        $plansId = $request->input("plans_id");
+        $lastFourDigits = $request->input("last_four_digits");
+        $nextBilling = $request->input("next_billing");
+        $dateVerified = $request->input("date_verified");
+        $stripeUser = $request->input("stripe_user");
+        $stripeSubscription = $request->input("stripe_subscription");
+        $stripePrice = $request->input("stripe_price");
+        $stripeProduct = $request->input("stripe_product");
+        $cardBrand = $request->input("card_brand");
 
         $subscription->update([
-            'next_billing' => $nextBilling,
-            'date_verified' => $dateVerified,
-            'last_four_digits' => $lastFourDigits,
-            'plans_id' => $plansId,
-            'user_id' => $userId,
-            'daily_plans_used' => 0,
-            'weekly_plans_used' => 0,
-            'status' => PlanStatus::PAID->value,
-            'stripe_user' => $stripeUser,
-            'stripe_subscription' => $stripeSubscription,
-            'stripe_price' => $stripePrice,
-            'stripe_product' => $stripeProduct,
-            'card_brand' => $cardBrand
+            "next_billing" => $nextBilling,
+            "date_verified" => $dateVerified,
+            "last_four_digits" => $lastFourDigits,
+            "plans_id" => $plansId,
+            "user_id" => $userId,
+            "daily_plans_used" => 0,
+            "weekly_plans_used" => 0,
+            "status" => PlanStatus::PAID->value,
+            "stripe_user" => $stripeUser,
+            "stripe_subscription" => $stripeSubscription,
+            "stripe_price" => $stripePrice,
+            "stripe_product" => $stripeProduct,
+            "card_brand" => $cardBrand,
         ]);
         $subscription->save();
 
-        return response()->json(['message' => 'subscription updated with success']);
+        return response()->json([
+            "message" => "subscription updated with success",
+        ]);
     }
 
     public function patchPlanStatus(string $subscriptionId, Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'status' => ['string', 'required', Rule::enum(PlanStatus::class)]
+            "status" => ["string", "required", Rule::enum(PlanStatus::class)],
         ]);
 
         if ($validator->failed()) {
             return response()->json([
-                'message' => 'Status validation failed',
-                'error' => $validator->errors()
+                "message" => "Status validation failed",
+                "error" => $validator->errors(),
             ]);
         }
 
-        $subscription = Subscription::query()->where('uuid', '=', $subscriptionId)->first();
+        $subscription = Subscription::query()
+            ->where("uuid", "=", $subscriptionId)
+            ->first();
 
-        if (!$subscription) return response()->json([
-            'error' => 'Subscription not found'
-        ], 422);
+        if (!$subscription) {
+            return response()->json(
+                [
+                    "error" => "Subscription not found",
+                ],
+                422,
+            );
+        }
 
-        $subscription->update(['status' => $request->input('status')]);
+        $subscription->update(["status" => $request->input("status")]);
         $subscription->save();
 
-        return response()->json(['message' => 'subscription status updated with success']);
+        return response()->json([
+            "message" => "subscription status updated with success",
+        ]);
     }
 
     public function show(string $userUUID)
     {
-        $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
+        $subscription = Subscription::query()
+            ->where("user_id", "=", $userUUID)
+            ->first();
         $plan = null;
 
-        if ($subscription && $subscription->plans_id)
-            $plan = Plans::query('uuid', '=', $subscription->plans_id)->first();
+        if ($subscription && $subscription->plans_id) {
+            $plan = Plans::query("uuid", "=", $subscription->plans_id)->first();
+        }
 
-        return response()->json(['subscription' => $subscription, 'plan' => $plan]);
+        return response()->json([
+            "subscription" => $subscription,
+            "plan" => $plan,
+        ]);
     }
 
     public function dashboard(string $userUUID)
     {
-        $subscription = Subscription::query()->where('user_id', '=', $userUUID)->first();
-        $plan = Plans::query()->where('uuid', '=', $subscription->plans_id)->first();
+        $subscription = Subscription::query()
+            ->where("user_id", "=", $userUUID)
+            ->first();
+        $plan = Plans::query()
+            ->where("uuid", "=", $subscription->plans_id)
+            ->first();
 
         return response()->json([
-            'max_amount_planning_week' => $plan->amount_planning_week,
-            'max_amount_planning_daily' => $plan->amount_planning_day,
-            'used_weekly_planning' => $subscription->weekly_plans_used,
-            'used_daily_planning' => $subscription->daily_plans_used,
-            'current_plan' => $plan->plan_name,
-            'subscription_id' => $subscription->uuid,
-            'plan_id' => $plan->uuid
+            "max_amount_planning_week" => $plan->amount_planning_week,
+            "max_amount_planning_daily" => $plan->amount_planning_day,
+            "used_weekly_planning" => $subscription->weekly_plans_used,
+            "used_daily_planning" => $subscription->daily_plans_used,
+            "current_plan" => $plan->plan_name,
+            "subscription_id" => $subscription->uuid,
+            "plan_id" => $plan->uuid,
         ]);
     }
 
@@ -233,35 +287,55 @@ class SubscriptionController extends Controller
      * @param "week" | "daily" $planningType
      * @param string $subscriptionId
      */
-    public function addPlanningUsedOnSubscription(string $planningType, string $subscriptionId)
-    {
-        if ($planningType !== 'week' && $planningType !== 'daily')
-            return response()->json([
-                'message' => 'Planning type invalid'
-            ], 400);
+    public function addPlanningUsedOnSubscription(
+        string $planningType,
+        string $subscriptionId,
+    ) {
+        if ($planningType !== "week" && $planningType !== "daily") {
+            return response()->json(
+                [
+                    "message" => "Planning type invalid",
+                ],
+                400,
+            );
+        }
 
-        $subscription = Subscription::query()->where('uuid', '=', $subscriptionId)->first();
-        $plan = Plans::query()->where('uuid', '=', $subscription->plans_id)->first();
+        $subscription = Subscription::query()
+            ->where("uuid", "=", $subscriptionId)
+            ->first();
+        $plan = Plans::query()
+            ->where("uuid", "=", $subscription->plans_id)
+            ->first();
 
-        if ($planningType === 'week') {
-            if ($subscription->weekly_plans_used >= $plan->amount_planning_week)
-                return response()->json([
-                    'message' => 'Used all weekly token'
-                ], 403);
+        if ($planningType === "week") {
+            if (
+                $subscription->weekly_plans_used >= $plan->amount_planning_week
+            ) {
+                return response()->json(
+                    [
+                        "message" => "Used all weekly token",
+                    ],
+                    403,
+                );
+            }
 
             $plansUsed = $subscription->weekly_plans_used + 1;
             $subscription->weekly_plans_used = $plansUsed;
             $subscription->save();
 
             return response()->json([
-                'message' => "Subscription week tokens used updated with success"
+                "message" =>
+                    "Subscription week tokens used updated with success",
             ]);
         }
 
         if ($subscription->daily_plans_used >= $plan->amount_planning_day) {
-            return response()->json([
-                'message' => 'Used all weekly token'
-            ], 403);
+            return response()->json(
+                [
+                    "message" => "Used all weekly token",
+                ],
+                403,
+            );
         }
 
         $plansUsed = $subscription->daily_plans_used + 1;
@@ -269,113 +343,135 @@ class SubscriptionController extends Controller
         $subscription->save();
 
         return response()->json([
-            'message' => "Subscription daily tokens used updated with success"
+            "message" => "Subscription daily tokens used updated with success",
         ]);
     }
 
     public function changePaymentMethod(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'return_url' => ['required', 'string', 'url'],
-            'user_id' => ['required', 'string', 'exists:user,uuid']
+            "return_url" => ["required", "string", "url"],
+            "user_id" => ["required", "string", "exists:user,uuid"],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'Error in validation',
-                'errors' => $validator->errors()
+                "Error in validation",
+                "errors" => $validator->errors(),
             ]);
         }
 
-        $userId = $request->input('user_id');
-        $return_url = $request->input('return_url');
-        $subscription = Subscription::query()->where('user_id', '=', $userId)->first();
+        $userId = $request->input("user_id");
+        $return_url = $request->input("return_url");
+        $subscription = Subscription::query()
+            ->where("user_id", "=", $userId)
+            ->first();
 
-        if (!$subscription || $subscription === null) return response()->json([
-            'message' => 'This user does not has subscription in our system'
-        ], 400);
+        if (!$subscription || $subscription === null) {
+            return response()->json(
+                [
+                    "message" =>
+                        "This user does not has subscription in our system",
+                ],
+                400,
+            );
+        }
 
-
-        $stripe = new StripeClient(config('services.stripe.secret'));
+        $stripe = new StripeClient(config("services.stripe.secret"));
         $session = $stripe->billingPortal->sessions->create([
-            'customer' => $subscription->stripe_user,
-            'return_url' => $return_url,
-            'flow_data' => [
-                'type' => 'payment_method_update'
-            ]
+            "customer" => $subscription->stripe_user,
+            "return_url" => $return_url,
+            "flow_data" => [
+                "type" => "payment_method_update",
+            ],
         ]);
 
-        return response()->json(['update_url' => $session->url]);
+        return response()->json(["update_url" => $session->url]);
     }
 
     public function changeSubscriptionPlan(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_id' => ['required', 'string', 'exists:user,uuid'],
-            'return_url' => ['required', 'string', 'url'],
-            'price' => ['required', 'string'],
+            "user_id" => ["required", "string", "exists:user,uuid"],
+            "return_url" => ["required", "string", "url"],
+            "price" => ["required", "string"],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Error in validation',
-                'errors' => $validator->errors()
+                "message" => "Error in validation",
+                "errors" => $validator->errors(),
             ]);
         }
 
-        $userId = $request->input('user_id');
-        $return_url = $request->input('return_url');
-        $price = $request->input('price');
+        $userId = $request->input("user_id");
+        $return_url = $request->input("return_url");
+        $price = $request->input("price");
 
-        $subscription = Subscription::query()->where(
-            'user_id',
-            '=',
-            $userId
-        )->first();
+        $subscription = Subscription::query()
+            ->where("user_id", "=", $userId)
+            ->first();
 
-        if (!$subscription || $subscription === null) return response()->json([
-            'message' => 'Subscription was not found with this user'
-        ], 400);
+        if (!$subscription || $subscription === null) {
+            return response()->json(
+                [
+                    "message" => "Subscription was not found with this user",
+                ],
+                400,
+            );
+        }
 
-        $stripe = new StripeClient(config('services.stripe.secret'));
+        $stripe = new StripeClient(config("services.stripe.secret"));
         $session = $stripe->billingPortal->sessions->create([
-            'customer' => $subscription->stripe_user,
-            'return_url' => $return_url,
-            'flow_data' => [
-                'type' => 'subscription_update_confirm',
-                'subscription_update_confirm' => [
-                    'subscription' => $subscription->stripe_subscription,
-                    'items' => [
+            "customer" => $subscription->stripe_user,
+            "return_url" => $return_url,
+            "flow_data" => [
+                "type" => "subscription_update_confirm",
+                "subscription_update_confirm" => [
+                    "subscription" => $subscription->stripe_subscription,
+                    "items" => [
                         [
                             "id" => $subscription->stripe_subscription_item,
                             "price" => $price,
-                            'quantity' => 1
-                        ]
-                    ]
-                ]
+                            "quantity" => 1,
+                        ],
+                    ],
+                ],
             ],
         ]);
 
-        return response()->json(['update_url' => $session->url]);
+        return response()->json(["update_url" => $session->url]);
     }
 
     public function cancelSubscription(string $subscriptionId)
     {
-        if (!$subscriptionId || strlen($subscriptionId) <= 0) return response()->json([
-            'message' => 'subscription not founded'
-        ], 400);
+        if (!$subscriptionId || strlen($subscriptionId) <= 0) {
+            return response()->json(
+                [
+                    "message" => "subscription not founded",
+                ],
+                400,
+            );
+        }
 
-        $subscription = Subscription::query()->where('uuid', '=', $subscriptionId)->first();
+        $subscription = Subscription::query()
+            ->where("uuid", "=", $subscriptionId)
+            ->first();
 
-        if (!$subscription || $subscription === null) return response()->json([
-            'message' => 'subscription not founded'
-        ], 400);
+        if (!$subscription || $subscription === null) {
+            return response()->json(
+                [
+                    "message" => "subscription not founded",
+                ],
+                400,
+            );
+        }
 
-        $stripe = new StripeClient(config('services.stripe.secret'));
+        $stripe = new StripeClient(config("services.stripe.secret"));
         $stripe->subscriptions->cancel($subscription->stripe_subscription);
 
         return response()->json([
-            'message' => 'Subscription deleted with success'
+            "message" => "Subscription deleted with success",
         ]);
     }
 }

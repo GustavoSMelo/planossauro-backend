@@ -7,35 +7,44 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
+Artisan::command("inspire", function () {
     $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+})->purpose("Display an inspiring quote");
 
 Schedule::call(function () {
-    $subscriptions = Subscription::where('next_billing', '>=', date('Y-m-d'))->get();
+    $subscriptions = Subscription::where(
+        "next_billing",
+        ">=",
+        date("Y-m-d"),
+    )->get();
 
     foreach ($subscriptions as $subscription) {
-        if ($subscription->status === PlanStatus::PAID->value || $subscription->status === PlanStatus::ACTIVE->value) {
+        if (
+            $subscription->status === PlanStatus::PAID->value ||
+            $subscription->status === PlanStatus::ACTIVE->value
+        ) {
             $subscription->daily_plans_used = 0;
             $subscription->weekly_plans_used = 0;
-            $subscription->next_billing = date('Y-m-d', strtotime('+1 month'));
+            $subscription->next_billing = date("Y-m-d", strtotime("+1 month"));
             $subscription->save();
         }
     }
 })
+    ->name("reset_subscription_tokens")
     ->daily()
-    ->timezone('America/Sao_Paulo')
-    ->name('reset_subscription_tokens')
+    ->timezone("America/Sao_Paulo")
     ->withoutOverlapping();
 
 Schedule::call(function () {
-    $users = User::query()->where('deleted_at', '<=', date('Y-m-d', strtotime('-1 month')))->get();
+    $users = User::query()
+        ->where("deleted_at", "<=", date("Y-m-d", strtotime("-1 month")))
+        ->get();
 
     foreach ($users as $user) {
         $user->delete();
     }
 })
+    ->name("delete_user_accounts")
     ->daily()
-    ->timezone('America/Sao_Paulo')
-    ->name('delete_user_accounts')
+    ->timezone("America/Sao_Paulo")
     ->withoutOverlapping();
