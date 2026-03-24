@@ -43,5 +43,5 @@ RUN mkdir -p /var/www/.config/psysh && chown -R www-data:www-data /var/www
 RUN chmod +x /app/start.sh
 
 USER www-data
-EXPOSE 80
+EXPOSE 8080
 ENTRYPOINT ["/app/start.sh"]
