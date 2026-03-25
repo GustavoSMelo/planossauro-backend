@@ -149,13 +149,15 @@ class UserController extends Controller
                 ->first();
 
             if ($userFinded && $userFinded !== null) {
-                $userFinded->full_name = $full_name;
                 if ($github_email && $userFinded->github_email === null) {
                     $userFinded->github_email = $github_email;
+                    $userFinded->github_id = $github_id;
                 } elseif ($google_email && $userFinded->google_email === null) {
                     $userFinded->google_email = $google_email;
+                    $userFinded->google_id = $google_id;
                 }
-                $userFinded->github_id = $github_id;
+
+                $userFinded->full_name = $full_name;
                 $userFinded->cellphone_number = $cellphone_number;
                 $userFinded->github_validation_code = $githubValidationCode;
                 $userFinded->google_validation_code = $googleValidationCode;
