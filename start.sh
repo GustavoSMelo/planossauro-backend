@@ -19,5 +19,4 @@ php artisan view:clear
 done) &
 
 php-fpm -D
-envsubst '${IP_PASS}' < /app/nginx.conf.template > /etc/nginx/nginx.conf
 nginx -g "daemon off;"
