@@ -2,10 +2,6 @@
 
 set -e
 
-cat /.env | grep -v '^#' | grep -v '^$' | while IFS='=' read -r key value; do
-    export "$key"="$value"
-done
-
 until php artisan tinker --execute="DB::connection()->getPdo()"; do
     echo "Waiting for database..."
     sleep 2
@@ -14,7 +10,7 @@ done
 echo "Connected to database"
 php artisan config:clear
 php artisan cache:clear
-php artisan migrate --seed
+php artisan migrate --seed --force
 
 (while true; do
   php artisan schedule:run --no-interaction
