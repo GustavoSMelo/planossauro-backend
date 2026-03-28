@@ -11,6 +11,8 @@ echo "Connected to database"
 php artisan config:clear
 php artisan cache:clear
 php artisan migrate --seed --force
+php artisan cache:clear
+php artisan view:clear
 
 (while true; do
   php artisan schedule:run --no-interaction
