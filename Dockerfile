@@ -32,10 +32,11 @@ WORKDIR /app
 
 COPY --from=dependency-builder /app /app
 
+RUN mkdir -p /var/run/php
 RUN cp -f /app/php8.5-fpm.sock /usr/local/etc/php-fpm.d/www.sock
 RUN cp -f /app/nginx.conf /etc/nginx/conf.d/
 RUN rm -rf /etc/nginx/sites-enabled/*
-RUN chown -R www-data:www-data /app
+RUN chown -R www-data:www-data /app/*
 RUN mkdir -p /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi /var/log/nginx /var/run/nginx && \
     chown -R www-data:www-data /var/lib/nginx /var/log/nginx /var/run/nginx /etc/nginx
 RUN sed -i 's|/run/nginx.pid|/var/run/nginx/nginx.pid|g' /etc/nginx/nginx.conf
