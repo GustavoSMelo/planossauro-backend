@@ -1,6 +1,8 @@
 services:
   planossauro-backend:
-    build: homolog.Dockerfile
+    build:
+      context: .
+      dockerfile: homolog.Dockerfile
     ports:
       - 8081:8081
     networks:
