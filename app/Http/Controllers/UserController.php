@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PlanningHour;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -50,6 +51,8 @@ class UserController extends Controller
                     "string",
                     Rule::unique("user", "google_id"),
                 ],
+                "initial_hour" => ["required", "string"],
+                "interval_between_classes" => ["required", "string"],
             ]);
 
             if ($validator->fails()) {
@@ -86,6 +89,19 @@ class UserController extends Controller
              * @var string
              */
             $cellphone_number = $request->input("cellphone_number");
+
+            /**
+             * @var string
+             */
+            $initial_hour = $request->input("initial_hour", "12:00");
+
+            /**
+             * @var string
+             */
+            $interval_between_classes = $request->input(
+                "interval_between_classes",
+                "00:30",
+            );
 
             /**
              * @var string | null
@@ -175,6 +191,12 @@ class UserController extends Controller
                     "github_validation_code" => $githubValidationCode,
                     "google_validation_code" => $googleValidationCode,
                     "sms_validation_code" => $smsValidationCode,
+                ]);
+
+                PlanningHour::create([
+                    "initial_hour" => $initial_hour,
+                    "interval_between_classes" => $interval_between_classes,
+                    "user_id" => $userCreated->uuid,
                 ]);
             }
 
@@ -489,8 +511,8 @@ class UserController extends Controller
             if ($validator->failed()) {
                 return response()->json(
                     [
-                        "Message" => "validation failed",
-                        "Errors" => $validator->errors(),
+                        "message" => "validation failed",
+                        "errors" => $validator->errors(),
                     ],
                     400,
                 );
