@@ -45,6 +45,17 @@ class SupportEmailsController extends Controller
         $description = $request->input("description");
         $category = $request->input("category");
         $ticketId = $request->input("ticketId");
+        $googleEmail = "";
+        $githubEmail = "";
+        $cellphone = $user->cellphone_number;
+
+        if ($user->google_email) {
+            $googleEmail = $user->google_email;
+        }
+
+        if ($user->github_email) {
+            $githubEmail = $user->github_email;
+        }
 
         SupportEmails::create([
             "title" => $title,
@@ -73,7 +84,7 @@ class SupportEmailsController extends Controller
                     config("services.resend.mail") .
                     ">",
                 "to" => config("app.support_email"),
-                "subject" => "Planeja.ai - Support",
+                "subject" => "Planossauro - Support",
                 "attachments" => $attachments,
                 "html" => view("mail.support", [
                     "userUUID" => $userUUID,
@@ -81,6 +92,9 @@ class SupportEmailsController extends Controller
                     "category" => $category,
                     "ticketId" => $ticketId,
                     "description" => $description,
+                    "github_email" => $githubEmail,
+                    "google_email" => $googleEmail,
+                    "cellphone_number" => $cellphone,
                 ])->render(),
             ]);
         } catch (\Exception $e) {

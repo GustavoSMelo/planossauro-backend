@@ -20,6 +20,9 @@ class Support extends Mailable
     public string $category;
     public string $ticketId;
     public string $description;
+    public string $github_email;
+    public string $google_email;
+    public string $cellphone_number;
 
     /**
      * Create a new message instance.
@@ -31,6 +34,9 @@ class Support extends Mailable
         string $category,
         string $ticketId,
         string $description,
+        string $github_email,
+        string $google_email,
+        string $cellphone_number,
     ) {
         $this->files = $files;
         $this->userUUID = $userUUID;
@@ -38,6 +44,9 @@ class Support extends Mailable
         $this->category = $category;
         $this->ticketId = $ticketId;
         $this->description = $description;
+        $this->github_email = $github_email;
+        $this->google_email = $google_email;
+        $this->cellphone_number = $cellphone_number;
     }
 
     /**

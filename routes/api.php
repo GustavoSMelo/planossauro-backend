@@ -4,13 +4,14 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\PlanningHourController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SupportEmailsController;
 use App\Http\Controllers\UserController;
-use App\Http\Middleware\Planning\ValidatePlanningID;
 use App\Http\Middleware\PaymentHistory\ValidatePaymentHistoryID;
+use App\Http\Middleware\Planning\ValidatePlanningID;
 use App\Http\Middleware\Subscription\ValidateSubscriptionID;
 use App\Http\Middleware\ValidateUserTokenByBody;
 use App\Http\Middleware\ValidateUserTokenByBodyUserID;
@@ -120,6 +121,25 @@ Route::prefix("planning")
         ])->middleware(ValidatePlanningID::class);
 
         Route::post("/create", [PlanningController::class, "create"]);
+    });
+
+// PlanningHour routes
+Route::prefix("planninghour")
+    ->middleware("throttle:100,1")
+    ->middleware("auth:sanctum")
+    ->group(function () {
+        Route::post("", [PlanningHourController::class, "store"])->middleware(
+            ValidateUserTokenByBody::class,
+        );
+
+        Route::get("/{uuid}", [PlanningHourController::class, "show"]);
+
+        Route::put("/{userUUID}", [
+            PlanningHourController::class,
+            "update",
+        ])->middleware(ValidateUserTokenByRoute::class);
+
+        Route::delete("/{uuid}", [PlanningHourController::class, "destroy"]);
     });
 
 // Plans routes

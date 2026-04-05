@@ -1,0 +1,34 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create("planning_hour", function (Blueprint $table) {
+            $table->uuid()->primary();
+            $table->string("interval_between_classes")->default("00:30");
+            $table->string("initial_hour")->default("12:00");
+            $table->timestamps();
+
+            $table
+                ->foreignUuid("user_id")
+                ->references("uuid")
+                ->on("user")
+                ->cascadeOnDelete();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists("planning_hour");
+    }
+};

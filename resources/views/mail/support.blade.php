@@ -25,6 +25,9 @@
             <p>
                 Uuid: {{ $userUUID }} <br />
                 TicketId: {{ $ticketId }} <br />
+                Github Email: {{ $github_email }} <br />
+                Google Email: {{ $google_email }} <br />
+                Cellphone Number: {{ $cellphone_number }} <br />
                 <hr />
                 Titulo: {{ $title }} <br />
                 Categoria: {{ $category }} <br />
