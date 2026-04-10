@@ -333,13 +333,16 @@ class PlanningController extends Controller
         $response = Http::withHeaders([
             "Content-Type" => "application/json",
             "Authorization" => "Bearer " . config("services.openai.secret"),
-        ])->post("https://api.openai.com/v1/responses", [
-            "model" => config("services.openai.model"),
-            "input" => $prompt,
-            "reasoning" => [
-                "effort" => "low",
-            ],
-        ]);
+        ])
+            ->timeout(120)
+            ->retry(3, 1000)
+            ->post("https://api.openai.com/v1/responses", [
+                "model" => config("services.openai.model"),
+                "input" => $prompt,
+                "reasoning" => [
+                    "effort" => "low",
+                ],
+            ]);
 
         $message = $response["output"][1]["content"][0]["text"];
 

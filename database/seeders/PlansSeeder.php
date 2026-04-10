@@ -15,8 +15,8 @@ class PlansSeeder extends Seeder
         Plans::query()->firstOrCreate([
             "price" => 0,
             "plan_name" => "free",
-            "amount_planning_day" => 3,
-            "amount_planning_week" => 3,
+            "amount_planning_day" => 2,
+            "amount_planning_week" => 2,
             "has_cloud_save" => true,
             "uuid" => "91842dba-9965-42c9-af2a-07fef464b315",
         ]);
