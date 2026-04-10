@@ -33,7 +33,7 @@ WORKDIR /app
 COPY --from=dependency-builder /app /app
 
 RUN mkdir -p /var/run/php
-# RUN cp -f /app/php8.5-fpm.sock /usr/local/etc/php-fpm.d/www.sock
+RUN cp -f /app/php8.5-fpm.sock /usr/local/etc/php-fpm.d/www.sock
 RUN cp -f /app/nginx.conf /etc/nginx/conf.d/
 RUN rm -rf /etc/nginx/sites-enabled/*
 RUN chown -R www-data:www-data /app/*
@@ -42,20 +42,6 @@ RUN mkdir -p /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi /va
 RUN sed -i 's|/run/nginx.pid|/var/run/nginx/nginx.pid|g' /etc/nginx/nginx.conf
 RUN mkdir -p /var/www/.config/psysh && chown -R www-data:www-data /var/www
 
-RUN echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
-    echo "user = www-data" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "group = www-data" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "listen = /var/run/php/php-fpm.sock" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "listen.owner = www-data" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "listen.group = www-data" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "listen.mode = 0660" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "pm.max_children = 25" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "pm.start_servers = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "pm.min_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "pm.max_spare_servers = 50" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "pm.max_requests = 500" >> /usr/local/etc/php-fpm.d/www.conf && \
-    echo "request_terminate_timeout = 120s" >> /usr/local/etc/php-fpm.d/www.conf
 
 RUN chmod +x /app/start.sh
 
