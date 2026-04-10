@@ -350,7 +350,7 @@ class PlanningController extends Controller
             ->timeout(120)
             ->retry(3, 1000)
             ->post("https://nano-gpt.com/api/v1/chat/completions", [
-                "model" => "gpt-oss-120b",
+                "model" => config("services.openai.model"),
                 "messages" => [
                     [
                         "content" => $prompt,

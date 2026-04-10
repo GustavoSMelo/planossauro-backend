@@ -29,6 +29,7 @@ return [
 
     "openai" => [
         "secret" => env("OPENAI_SECRET_KEY"),
+        "model" => env("OPENAI_MODEL"),
     ],
 
     "ses" => [
