@@ -330,50 +330,50 @@ class PlanningController extends Controller
 
         $prompt = $request->input("prompt");
 
-        // $response = Http::withHeaders([
-        //     "Content-Type" => "application/json",
-        //     "Authorization" => "Bearer " . config("services.openai.secret"),
-        // ])->post("https://api.openai.com/v1/responses", [
-        //     "model" => "gpt-5-nano",
-        //     "input" => $prompt,
-        //     "reasoning" => [
-        //         "effort" => "low",
-        //     ],
-        // ]);
-
-        // $message = $response["output"][1]["content"][0]["text"];
-
         $response = Http::withHeaders([
             "Content-Type" => "application/json",
             "Authorization" => "Bearer " . config("services.openai.secret"),
-        ])
-            ->timeout(120)
-            ->retry(3, 1000)
-            ->post("https://nano-gpt.com/api/v1/chat/completions", [
-                "model" => config("services.openai.model"),
-                "messages" => [
-                    [
-                        "content" => $prompt,
-                        "role" => "user",
-                    ],
-                ],
-            ]);
+        ])->post("https://api.openai.com/v1/responses", [
+            "model" => "gpt-5-nano",
+            "input" => $prompt,
+            "reasoning" => [
+                "effort" => "low",
+            ],
+        ]);
 
-        if (!$response->successful()) {
-            return response()->json(
-                [
-                    "message" => "Error calling nanoGPT API",
-                    "status" => $response->status(),
-                    "error" => $response->json(),
-                ],
-                $response->status(),
-            );
-        }
+        $message = $response["output"][1]["content"][0]["text"];
 
-        $result = $response->json();
+        // $response = Http::withHeaders([
+        //     "Content-Type" => "application/json",
+        //     "Authorization" => "Bearer " . config("services.openai.secret"),
+        // ])
+        //     ->timeout(120)
+        //     ->retry(3, 1000)
+        //     ->post("https://nano-gpt.com/api/v1/chat/completions", [
+        //         "model" => config("services.openai.model"),
+        //         "messages" => [
+        //             [
+        //                 "content" => $prompt,
+        //                 "role" => "user",
+        //             ],
+        //         ],
+        //     ]);
 
-        // Extract the message content from the response
-        $message = $result["choices"][0]["message"]["content"] ?? null;
+        // if (!$response->successful()) {
+        //     return response()->json(
+        //         [
+        //             "message" => "Error calling nanoGPT API",
+        //             "status" => $response->status(),
+        //             "error" => $response->json(),
+        //         ],
+        //         $response->status(),
+        //     );
+        // }
+
+        // $result = $response->json();
+
+        // // Extract the message content from the response
+        // $message = $result["choices"][0]["message"]["content"] ?? null;
 
         return response()->json([
             "message" => $message,
