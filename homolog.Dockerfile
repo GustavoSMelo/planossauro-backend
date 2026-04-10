@@ -16,7 +16,7 @@ RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/opcache.ini && \
     echo "display_errors=Off" >> /usr/local/etc/php/conf.d/docker-php.ini && \
     echo "upload_max_filesize=128M" >> /usr/local/etc/php/conf.d/uploads.ini && \
     echo "post_max_size=128M" >> /usr/local/etc/php/conf.d/uploads.ini && \
-    echo "memory_limit=256M" >> /usr/local/etc/php/conf.d/uploads.ini && \
+    echo "memory_limit=128M" >> /usr/local/etc/php/conf.d/uploads.ini && \
     echo "display_startup_errors=Off" >> /usr/local/etc/php/conf.d/docker-php.ini
 
 # Getting composer official image and installing dependency
@@ -32,8 +32,8 @@ WORKDIR /app
 
 COPY --from=dependency-builder /app /app
 
-RUN mkdir -p /var/run/php
-RUN cp -f /app/php8.5-fpm.sock /usr/local/etc/php-fpm.d/www.sock
+RUN mkdir -p /var/run/php && chown -R www-data:www-data /var/run/php
+RUN cp -f /app/php8.5-fpm.sock /usr/local/etc/php-fpm.d/www.conf
 RUN cp -f /app/homolog.nginx.conf /etc/nginx/conf.d/
 RUN mv /etc/nginx/conf.d/homolog.nginx.conf /etc/nginx/conf.d/nginx.conf
 RUN rm -rf /etc/nginx/sites-enabled/*
