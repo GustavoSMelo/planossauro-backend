@@ -334,7 +334,7 @@ class PlanningController extends Controller
             "Content-Type" => "application/json",
             "Authorization" => "Bearer " . config("services.openai.secret"),
         ])->post("https://api.openai.com/v1/responses", [
-            "model" => "gpt-5-nano",
+            "model" => config("services.openai.model"),
             "input" => $prompt,
             "reasoning" => [
                 "effort" => "low",
