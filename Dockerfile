@@ -33,7 +33,7 @@ WORKDIR /app
 COPY --from=dependency-builder /app /app
 
 RUN mkdir -p /var/run/php
-RUN cp -f /app/php8.5-fpm.sock /usr/local/etc/php-fpm.d/www.sock
+RUN cp -f /app/php8.5-fpm.sock /usr/local/etc/php-fpm.d/www.conf
 RUN cp -f /app/nginx.conf /etc/nginx/conf.d/
 RUN rm -rf /etc/nginx/sites-enabled/*
 RUN chown -R www-data:www-data /app/*
