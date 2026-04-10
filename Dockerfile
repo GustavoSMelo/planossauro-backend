@@ -16,7 +16,7 @@ RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/opcache.ini && \
     echo "display_errors=Off" >> /usr/local/etc/php/conf.d/docker-php.ini && \
     echo "upload_max_filesize=128M" >> /usr/local/etc/php/conf.d/uploads.ini && \
     echo "post_max_size=128M" >> /usr/local/etc/php/conf.d/uploads.ini && \
-    echo "memory_limit=256M" >> /usr/local/etc/php/conf.d/uploads.ini && \
+    echo "memory_limit=128M" >> /usr/local/etc/php/conf.d/uploads.ini && \
     echo "display_startup_errors=Off" >> /usr/local/etc/php/conf.d/docker-php.ini
 
 # Getting composer official image and installing dependency
