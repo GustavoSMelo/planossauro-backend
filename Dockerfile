@@ -41,8 +41,6 @@ RUN mkdir -p /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi /va
     chown -R www-data:www-data /var/lib/nginx /var/log/nginx /var/run/nginx /etc/nginx
 RUN sed -i 's|/run/nginx.pid|/var/run/nginx/nginx.pid|g' /etc/nginx/nginx.conf
 RUN mkdir -p /var/www/.config/psysh && chown -R www-data:www-data /var/www
-
-
 RUN chmod +x /app/start.sh
 
 USER www-data
