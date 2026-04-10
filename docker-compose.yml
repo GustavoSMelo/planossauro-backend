@@ -13,9 +13,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 2G
         reservations:
-          memory: 256M
+          memory: 1G
 
   planossauro-db:
     image: mariadb:12.2.2
