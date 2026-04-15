@@ -1,59 +1,192 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Planossauro Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+![Laravel](https://img.shields.io/badge/Laravel-12.0-red?style=flat-square&logo=laravel)
+![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+![Sanctum](https://img.shields.io/badge/Sanctum-4.0-orange?style=flat-square&logo=laravel)
+![Stripe](https://img.shields.io/badge/Stripe-19.3-purple?style=flat-square)
 
-## About Laravel
+RESTful API backend for the Planossauro planning management platform. Built with Laravel and Sanctum for authentication.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tech Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+───────────────────────────────
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Framework:** Laravel 11
+- **Auth:** Laravel Sanctum
+- **Payments:** Stripe (webhooks integration)
+- **Documentation:** OpenAPI specs in `docs/API_ROUTES.md`
 
-## Learning Laravel
+───────────────────────────────
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Features
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- User management with GitHub and Google OAuth
+- Planning and planning hours tracking
+- Subscription management with Stripe
+- Payment history with NFe upload support
+- Support email system
+- Rate-limited API endpoints
 
-## Laravel Sponsors
+───────────────────────────────
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Getting Started
 
-### Premium Partners
+### Requirements
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- PHP 8.2+
+- Composer
+- SQLite/MySQL/MariaDB/PostgreSQL
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Installation
 
-## Code of Conduct
+```bash
+# Install dependencies
+composer install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Run migrations and seeder
+php artisan migrate --seed
 
-## Security Vulnerabilities
+# Start development server
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
+
+### Docker
+
+```bash
+# Build and start containers
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop containers
+docker compose down
+```
+
+The API will be available at `http://localhost:8080/api`
+
+───────────────────────────────
+
+### Docker Homolog
+
+```bash
+# Build and start homolog containers
+docker compose -f docker-compose.homolog.yml up -d
+
+# View logs
+docker compose -f docker-compose.homolog.yml logs -f
+
+# Stop containers
+docker compose -f docker-compose.homolog.yml down
+```
+
+───────────────────────────────
+
+## Docker Configuration
+
+### nginx.conf
+- Listens on port 8080
+- Web root: `/app/public`
+- PHP-FPM via Unix socket at `/var/run/php/php8.5-fpm.sock`
+- Security headers (X-Frame-Options, X-Content-Type-Options)
+- 300s timeouts for PHP-FPM requests
+
+### php8.5-fpm.sock
+- Socket: `/var/run/php/php8.5-fpm.sock`
+- Process manager: dynamic (min 2, max 25 children)
+- Max request timeout: 300s
+- Status endpoint enabled at `/status`
+
+───────────────────────────────
+
+## Scheduled Tasks
+
+The following tasks run daily at midnight (America/Sao_Paulo timezone):
+
+| Task | Description |
+|------|-------------|
+| `reset_subscription_tokens` | Resets daily/weekly plan usage and updates billing date for active/paid subscriptions |
+| `delete_user_accounts` | Permanently deletes users soft-deleted over 1 month ago |
+
+Run the scheduler manually:
+```bash
+php artisan schedule:run
+```
+
+───────────────────────────────
+
+## API Documentation
+
+Full API documentation available at `docs/API_ROUTES.md`.
+
+**Base URL:** `/api`
+
+### Quick Examples
+
+```bash
+# Health check
+curl http://localhost:8000/api/health
+
+# Create user
+curl -X POST http://localhost:8000/api/user \
+  -H "Content-Type: application/json" \
+  -d '{"full_name":"John","cellphone_number":"11999999999","email":"john@example.com"}'
+
+# List plans (no auth required)
+curl http://localhost:8000/api/plans/
+```
+
+───────────────────────────────
+
+## Project Structure
+
+```
+app/
+├── Dto/Stripe/          # Stripe webhook DTOs
+├── Http/
+│   ├── Controllers/     # API controllers
+│   └── Middleware/       # Custom middleware
+├── Mail/                # Email templates
+├── Models/               # Eloquent models
+└── Providers/            # Service providers
+config/                   # Laravel configuration
+docs/                     # API documentation
+routes/                   # Route definitions
+```
+
+───────────────────────────────
+
+## Key Endpoints
+
+| Resource | Description |
+|----------|-------------|
+| `/user` | User management |
+| `/planning` | Planning CRUD |
+| `/planninghour` | Planning hours tracking |
+| `/plans` | Available subscription plans |
+| `/subscription` | Subscription management |
+| `/payment/history` | Payment records |
+| `/auth/*` | GitHub/Google authentication |
+| `/webhook/payment` | Stripe webhook handler |
+
+───────────────────────────────
+
+## Rate Limits
+
+| Endpoint Group | Limit |
+|----------------|-------|
+| Logout | 10 req/min |
+| Health, User creation, Support, Auth | 20 req/min |
+| Plans listing | 40 req/min |
+| Planning, Subscription, Payment | 100 req/min |
+
+───────────────────────────────
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
