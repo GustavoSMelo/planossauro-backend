@@ -22,7 +22,7 @@ class SupportEmailsController extends Controller
             "attachments.*" => ["file", "max:5120"],
         ]);
 
-        if ($validator->failed()) {
+        if ($validator->fails()) {
             Log::info($validator->errors());
             Log::info($request->all());
 

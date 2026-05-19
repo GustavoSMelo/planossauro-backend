@@ -40,7 +40,7 @@ class PlanningHourController extends Controller
                 "user_id" => ["required", "string", "uuid"],
             ]);
 
-            if ($validator->failed()) {
+            if ($validator->fails()) {
                 return response()->json(
                     [
                         "message" => "validation failed",
@@ -99,7 +99,7 @@ class PlanningHourController extends Controller
                 "initial_hour" => ["required", "string"],
             ]);
 
-            if ($validator->failed()) {
+            if ($validator->fails()) {
                 return response()->json(
                     [
                         "message" => "validation failed",

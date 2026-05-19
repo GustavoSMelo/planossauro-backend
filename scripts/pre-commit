@@ -1,0 +1,13 @@
+#!/bin/sh
+
+echo "Running PHPStan analysis..."
+vendor/bin/phpstan analyse --memory-limit=512M ./app
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "PHPStan found errors. Commit aborted."
+    echo "Fix the errors and try again, or use --no-verify to skip."
+    exit 1
+fi
+
+echo "PHPStan passed. Proceeding with commit."

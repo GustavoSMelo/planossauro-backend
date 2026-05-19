@@ -3,22 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Plans extends Authenticatable
+class Plans extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     /**
      * @var string
      */
-    protected $primaryKey = "uuid";
+    protected $primaryKey = 'uuid';
 
     /**
      * @var string
      */
-    protected $table = "plans";
+    protected $table = 'plans';
 
     /**
      * @var bool
@@ -26,10 +26,10 @@ class Plans extends Authenticatable
     public $timestamps = true;
 
     protected $fillable = [
-        "plan_name",
-        "price",
-        "amount_planning_day",
-        "amounth_planning_week",
-        "has_cloud_save",
+        'plan_name',
+        'price',
+        'amount_planning_day',
+        'amount_planning_week',
+        'has_cloud_save',
     ];
 }

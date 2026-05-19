@@ -3,46 +3,47 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-class PaymentHistory extends Authenticatable
+class PaymentHistory extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     /**
      * @var string
      */
-    protected $primaryKey = "uuid";
+    protected $primaryKey = 'uuid';
 
     /**
      * @var string
      */
-    protected $table = "payment_history";
+    protected $table = 'payment_history';
 
     /**
-     * @var boolean
+     * @var bool
      */
     public $timestamps = true;
 
     protected $fillable = [
-        "payment_date",
-        "description",
-        "card_brand",
-        "last_four_digits",
-        "price",
-        "status",
-        "plan_id",
-        "user_id",
-        "NFe",
-        "stripe_invoice",
-        "stripe_product",
-        "stripe_subscription",
-        "subscription_id",
+        'payment_date',
+        'description',
+        'card_brand',
+        'last_four_digits',
+        'price',
+        'status',
+        'plan_id',
+        'user_id',
+        'NFe',
+        'stripe_invoice',
+        'stripe_product',
+        'stripe_subscription',
+        'subscription_id',
     ];
 
     protected $hidden = [
-        "stripe_invoice",
-        "stripe_product",
-        "stripe_subscription",
+        'stripe_invoice',
+        'stripe_product',
+        'stripe_subscription',
     ];
 }
