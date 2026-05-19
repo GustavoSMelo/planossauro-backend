@@ -365,14 +365,14 @@ class UserController extends Controller
             $userFinded->save();
 
             try {
-                if (!empty($github_email)) {
+                if (!empty($request->input('github_email'))) {
                     Resend::emails()->send([
                         "from" =>
                             config("services.resend.name") .
                             "<" .
                             config("services.resend.mail") .
                             ">",
-                        "to" => $github_email,
+                        "to" => $request->input('github_email'),
                         "subject" => "Planossauro - Validation Code",
                         "html" => view("mail.validation-mail", [
                             "validation_code" =>
