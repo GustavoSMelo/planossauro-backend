@@ -84,7 +84,6 @@ class SubscriptionController extends Controller
             "card_brand" => ["required", "string"],
             "next_billing" => ["required", "date", "after_or_equal:today"],
             "date_verified" => ["required", "date", "after_or_equal:today"],
-            "card_brand" => ["nullable", "string"],
             "stripe_user" => ["nullable", "string"],
             "stripe_price" => ["nullable", "string"],
             "stripe_product" => ["nullable", "string"],
@@ -173,7 +172,6 @@ class SubscriptionController extends Controller
             "next_billing" => ["required", "date", "after_or_equal:today"],
             "card_brand" => ["card_brand", "string"],
             "date_verified" => ["required", "date", "after_or_equal:today"],
-            "card_brand" => ["nullable", "string"],
             "stripe_user" => ["nullable", "string"],
             "stripe_price" => ["nullable", "string"],
             "stripe_product" => ["nullable", "string"],
@@ -218,11 +216,11 @@ class SubscriptionController extends Controller
             "status" => ["string", "required", Rule::enum(PlanStatus::class)],
         ]);
 
-        if ($validator->failed()) {
+        if ($validator->fails()) {
             return response()->json([
                 "message" => "Status validation failed",
                 "error" => $validator->errors(),
-            ]);
+            ], 422);
         }
 
         $subscription = Subscription::query()
@@ -254,7 +252,9 @@ class SubscriptionController extends Controller
         $plan = null;
 
         if ($subscription && $subscription->plans_id) {
-            $plan = Plans::query("uuid", "=", $subscription->plans_id)->first();
+            $plan = Plans::query()
+                ->where("uuid", "=", $subscription->plans_id)
+                ->first();
         }
 
         return response()->json([

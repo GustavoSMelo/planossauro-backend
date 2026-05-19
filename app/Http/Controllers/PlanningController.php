@@ -132,7 +132,7 @@ class PlanningController extends Controller
                 "user_id" => ["required", "string", "uuid"],
             ]);
 
-            if ($validator->failed()) {
+            if ($validator->fails()) {
                 return response()->json(
                     [
                         "message" => "validation failed",
@@ -223,6 +223,15 @@ class PlanningController extends Controller
                 ->where("uuid", "=", $uuid)
                 ->first();
 
+            if (!$planningFinded) {
+                return response()->json(
+                    [
+                        "error" => "Planning not found",
+                    ],
+                    400,
+                );
+            }
+
             $planningFinded->update([
                 "document_b64" => $documentb64,
                 "class_name" => $class_name,
@@ -245,6 +254,13 @@ class PlanningController extends Controller
     {
         try {
             $planning = Planning::query()->where("uuid", "=", $uuid)->first();
+
+            if (!$planning) {
+                return response()->json(
+                    ["message" => "Planning not founded"],
+                    400,
+                );
+            }
 
             $planning->update([
                 "deleted_at" =>

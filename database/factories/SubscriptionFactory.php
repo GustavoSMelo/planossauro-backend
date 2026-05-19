@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Plans;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,7 +23,7 @@ class SubscriptionFactory extends Factory
             'status' => 'inactive',
             'last_four_digits' => null,
             'user_id' => User::factory(),
-            'plans_id' => null,
+            'plans_id' => Plans::factory(),
             'card_brand' => null,
             'price' => 0,
             'stripe_subscription' => null,

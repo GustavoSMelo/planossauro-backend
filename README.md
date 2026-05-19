@@ -12,7 +12,7 @@ RESTful API backend for the Planossauro planning management platform. Built with
 
 ───────────────────────────────
 
-- **Framework:** Laravel 11
+- **Framework:** Laravel 12
 - **Auth:** Laravel Sanctum
 - **Payments:** Stripe (webhooks integration)
 - **Documentation:** OpenAPI specs in `docs/API_ROUTES.md`
@@ -189,4 +189,4 @@ routes/                   # Route definitions
 
 ## License
 
-MIT
+Private - You can see and check how the software works, but is not allowed to redistribute the software, but you are allowed to running locally on your machine.
