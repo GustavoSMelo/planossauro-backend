@@ -121,7 +121,7 @@ class PaymentHistoryController extends Controller
 
         if (!$payment) return response()->json([
             'message' => 'User not founded'
-        ]);
+        ], 400);
 
         $payment->update([
             'payment_date' => $paymentDate,
@@ -185,8 +185,9 @@ class PaymentHistoryController extends Controller
             return response()->json([
                 'message' => 'Error on validation',
                 'errors' => $validator->errors()
-            ]);
+            ], 422);
         }
+
 
         $payment = PaymentHistory::query()->where('uuid', '=', $paymentUuid)->first();
         $payment->update([

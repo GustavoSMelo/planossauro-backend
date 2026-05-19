@@ -412,6 +412,6 @@ class UserControllerTest extends TestCase
             'loginType' => 'github',
         ]);
 
-        $response->assertStatus(500);
+        $response->assertStatus(400);
     }
 }

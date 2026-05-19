@@ -218,11 +218,11 @@ class SubscriptionController extends Controller
             "status" => ["string", "required", Rule::enum(PlanStatus::class)],
         ]);
 
-        if ($validator->failed()) {
+        if ($validator->fails()) {
             return response()->json([
                 "message" => "Status validation failed",
                 "error" => $validator->errors(),
-            ]);
+            ], 422);
         }
 
         $subscription = Subscription::query()

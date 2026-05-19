@@ -87,32 +87,32 @@ class StripeController extends Controller
         StripeCache $stripeCache,
     ) {
         $user = User::query()
-            ->where('google_email', '=', $stripeCache->customer_email)
-            ->orWhere('github_email', '=', $stripeCache->customer_email)
+            ->where("google_email", "=", $stripeCache->customer_email)
+            ->orWhere("github_email", "=", $stripeCache->customer_email)
             ->first();
 
-        if (! $user) {
+        if (!$user) {
             Log::error(
-                'User not found for email: '.$stripeCache->customer_email,
+                "User not found for email: " . $stripeCache->customer_email,
             );
 
             return;
         }
 
         $subscription = Subscription::where(
-            'user_id',
-            '=',
+            "user_id",
+            "=",
             $user->uuid,
         )->first();
 
-        if (! $subscription) {
-            Log::error('Subscription not found for user: '.$user->uuid);
+        if (!$subscription) {
+            Log::error("Subscription not found for user: " . $user->uuid);
 
             return;
         }
 
         $plan = Plans::query()
-            ->where('uuid', '=', $stripeCache->plan_uuid)
+            ->where("uuid", "=", $stripeCache->plan_uuid)
             ->first();
 
         $subscription->stripe_subscription = $stripeCache->subscription_id;
@@ -121,23 +121,23 @@ class StripeController extends Controller
         $subscription->stripe_product = $stripeCache->product_id;
         $subscription->stripe_subscription_item =
             $stripeCache->subscription_item;
-        $subscription->next_billing = gmdate('Y-m-d', $stripeCache->period_end);
+        $subscription->next_billing = gmdate("Y-m-d", $stripeCache->period_end);
         $subscription->status = $stripeCache->status;
         $subscription->card_brand = $stripeCache->card_brand;
         $subscription->last_four_digits = $stripeCache->last4;
-        $subscription->date_verified = date('Y-m-d');
+        $subscription->date_verified = date("Y-m-d");
         $subscription->price = floor($stripeCache->amount_paid / 100);
 
-        if ($stripeCache->plan_uuid === '') {
-            $subscription->plans_id = '91842dba-9965-42c9-af2a-07fef464b315';
+        if ($stripeCache->plan_uuid === "") {
+            $subscription->plans_id = "91842dba-9965-42c9-af2a-07fef464b315";
         } else {
             $subscription->plans_id = $plan->uuid;
         }
 
         $subscription->save();
 
-        $paymentHistory = new PaymentHistory;
-        $paymentHistory->payment_date = gmdate('Y-m-d', $stripeCache->paid_at);
+        $paymentHistory = new PaymentHistory();
+        $paymentHistory->payment_date = gmdate("Y-m-d", $stripeCache->paid_at);
         $paymentHistory->description = $stripeCache->description;
         $paymentHistory->card_brand = $stripeCache->card_brand;
         $paymentHistory->price = floor($stripeCache->amount_paid / 100);
@@ -150,30 +150,33 @@ class StripeController extends Controller
         $paymentHistory->stripe_subscription = $stripeCache->subscription_id;
         $paymentHistory->subscription_id = $subscription->uuid;
 
-        if ($stripeCache->plan_uuid === '') {
-            $subscription->plans_id = '91842dba-9965-42c9-af2a-07fef464b315';
-            $paymentHistory->plan_id = '91842dba-9965-42c9-af2a-07fef464b315';
+        if ($stripeCache->plan_uuid === "") {
+            $subscription->plans_id = "91842dba-9965-42c9-af2a-07fef464b315";
+            $paymentHistory->plan_id = "91842dba-9965-42c9-af2a-07fef464b315";
         } else {
             $subscription->plans_id = $plan->uuid;
             $paymentHistory->plan_id =
-                $plan?->uuid ?? '91842dba-9965-42c9-af2a-07fef464b315';
+                $plan?->uuid ?? "91842dba-9965-42c9-af2a-07fef464b315";
         }
 
         $paymentHistory->save();
 
-        Cache::forget('stripeCache-'.$stripeCache->customer_id);
+        Cache::forget("stripeCache-" . $stripeCache->customer_id);
 
-        Log::info('Stripe success: Subscription and payment history saved for customer '.$stripeCache->customer_id);
+        Log::info(
+            "Stripe success: Subscription and payment history saved for customer " .
+                $stripeCache->customer_id,
+        );
     }
 
     private function changePaymentMethodSubscription(
         string $customerId,
         ?string $customerEmail = null,
     ): bool {
-        $stripe = new StripeClient(config('services.stripe.secret'));
+        $stripe = new StripeClient(config("services.stripe.secret"));
         $customer = $stripe->customers->retrieve($customerId);
         $defaultPaymentId = $customer->invoice_settings->default_payment_method;
-        if (! $defaultPaymentId || $defaultPaymentId === null) {
+        if (!$defaultPaymentId || $defaultPaymentId === null) {
             return false;
         }
 
@@ -182,16 +185,16 @@ class StripeController extends Controller
         $brand = $defaultPayment->card->brand;
         $last4 = $defaultPayment->card->last4;
 
-        $useruuid = '';
-        $customerEmailHelper = '';
+        $useruuid = "";
+        $customerEmailHelper = "";
 
         if (strlen($customerEmail)) {
             $customerEmailHelper = $customerEmail;
         }
 
         $user = User::query()
-            ->where('google_email', '=', $customerEmailHelper)
-            ->orWhere('github_email', '=', $customerEmailHelper)
+            ->where("google_email", "=", $customerEmailHelper)
+            ->orWhere("github_email", "=", $customerEmailHelper)
             ->first();
 
         if ($user && $user->uuid) {
@@ -199,18 +202,18 @@ class StripeController extends Controller
         }
 
         $subscriptionQuery = Subscription::query()->where(
-            'stripe_user',
-            '=',
+            "stripe_user",
+            "=",
             $customerId,
         );
 
-        if ($useruuid !== '') {
-            $subscriptionQuery->orWhere('user_id', '=', $useruuid);
+        if ($useruuid !== "") {
+            $subscriptionQuery->orWhere("user_id", "=", $useruuid);
         }
 
         $subscription = $subscriptionQuery->first();
 
-        if (! $subscription) {
+        if (!$subscription) {
             return false;
         }
 
@@ -219,7 +222,10 @@ class StripeController extends Controller
 
         $subscription->save();
 
-        Log::info('Stripe success: Payment method changed for customer '.$customerId);
+        Log::info(
+            "Stripe success: Payment method changed for customer " .
+                $customerId,
+        );
 
         return true;
     }
@@ -228,86 +234,86 @@ class StripeController extends Controller
     {
         $body = $request->all();
 
-        switch ($body['type']) {
-            case 'charge.succeeded':
+        switch ($body["type"]) {
+            case "charge.succeeded":
                 $walletHelper =
-                    $body['data']['object']['payment_method_details']['card'][
-                        'wallet'
+                    $body["data"]["object"]["payment_method_details"]["card"][
+                        "wallet"
                     ];
                 $wallet = null;
 
                 if ($walletHelper !== null) {
                     $wallet = new WalletDTO(
-                        $body['data']['object']['card']['wallet']['type'] ??
+                        $body["data"]["object"]["card"]["wallet"]["type"] ??
                             null,
                     );
                 }
 
-                $cardCheckHelper = '';
+                $cardCheckHelper = "";
 
                 if (
                     $wallet &&
                     strlen($wallet->type) > 0 &&
-                    $wallet->type === 'google_pay'
+                    $wallet->type === "google_pay"
                 ) {
-                    $cardCheckHelper = 'pass';
+                    $cardCheckHelper = "pass";
                 } else {
                     $cardCheckHelper =
-                        $body['data']['object']['payment_method_details'][
-                            'card'
-                        ]['checks']['cvc_check'];
+                        $body["data"]["object"]["payment_method_details"][
+                            "card"
+                        ]["checks"]["cvc_check"];
                 }
 
                 $cardCheck = new CardChecksDTO($cardCheckHelper);
                 $card = new CardDTO(
-                    $body['data']['object']['payment_method_details']['card'][
-                        'brand'
+                    $body["data"]["object"]["payment_method_details"]["card"][
+                        "brand"
                     ],
-                    $body['data']['object']['payment_method_details']['card'][
-                        'last4'
+                    $body["data"]["object"]["payment_method_details"]["card"][
+                        "last4"
                     ],
                     $cardCheck,
                     $wallet,
                 );
                 $paymentMethodDetails = new PaymentMethodDetailsDTO($card);
                 $billingDetails = new BillingDetailsDTO(
-                    $body['data']['object']['billing_details']['email'],
+                    $body["data"]["object"]["billing_details"]["email"],
                 );
                 $dataObject = new DataObjectDTO(
-                    $body['data']['object']['id'],
+                    $body["data"]["object"]["id"],
                     $paymentMethodDetails,
-                    $body['data']['object']['customer'],
+                    $body["data"]["object"]["customer"],
                     $billingDetails,
                 );
                 $dataDTO = new DataDTO($dataObject);
                 $stripeChargeSucceeded = new StripeChargeSucceededDTO(
                     $dataDTO,
-                    $body['type'],
-                    $body['id'],
+                    $body["type"],
+                    $body["id"],
                 );
 
                 /**
                  * @var StripeCache | null
                  */
                 $stripeCache = Cache::get(
-                    'stripeCache-'.
+                    "stripeCache-" .
                         $stripeChargeSucceeded->data->object->customer,
                 );
 
                 if (
                     $stripeChargeSucceeded->data->object->payment_method_details
-                        ->card->checks->cvc_check !== 'check' &&
+                        ->card->checks->cvc_check !== "check" &&
                     $stripeChargeSucceeded->data->object->payment_method_details
-                        ->card->checks->cvc_check !== 'pass'
+                        ->card->checks->cvc_check !== "pass"
                 ) {
                     Log::error(
-                        'CVC invalid for customer'.
+                        "CVC invalid for customer" .
                             $stripeChargeSucceeded->data->object->customer,
                     );
                     break;
                 }
 
-                if (! $stripeCache) {
+                if (!$stripeCache) {
                     $stripeCacheHelper = new StripeCache(
                         null,
                         $stripeChargeSucceeded->data->object->customer,
@@ -328,13 +334,16 @@ class StripeController extends Controller
                     );
 
                     Cache::put(
-                        'stripeCache-'.$stripeCacheHelper->customer_id,
+                        "stripeCache-" . $stripeCacheHelper->customer_id,
                         $stripeCacheHelper,
                     );
 
-                    Log::info('Stripe success: Charge succeeded, cache created for customer '.$stripeCacheHelper->customer_id);
+                    Log::info(
+                        "Stripe success: Charge succeeded, cache created for customer " .
+                            $stripeCacheHelper->customer_id,
+                    );
 
-                    return response()->json(['received' => true]);
+                    return response()->json(["received" => true]);
                 }
 
                 $stripeCache->customer_id =
@@ -345,7 +354,7 @@ class StripeController extends Controller
                     $stripeChargeSucceeded->data->object->payment_method_details->card->brand;
 
                 Cache::put(
-                    'stripeCache-'.$stripeCache->customer_id,
+                    "stripeCache-" . $stripeCache->customer_id,
                     $stripeCache,
                 );
 
@@ -356,32 +365,33 @@ class StripeController extends Controller
                 }
 
                 break;
-            case 'invoice.paid':
+            case "invoice.paid":
                 $lineDatas = [];
 
                 foreach (
-                    $body['data']['object']['lines']['data'] as $index => $lineData
+                    $body["data"]["object"]["lines"]["data"]
+                    as $index => $lineData
                 ) {
                     $subscriptionItemDetails = new LineParentSubscriptionItemDetails(
-                        $lineData['parent']['subscription_item_details'][
-                            'subscription'
+                        $lineData["parent"]["subscription_item_details"][
+                            "subscription"
                         ],
-                        $lineData['parent']['subscription_item_details'][
-                            'subscription_item'
+                        $lineData["parent"]["subscription_item_details"][
+                            "subscription_item"
                         ],
                     );
                     $parent = new LinesParent($subscriptionItemDetails);
                     $priceDetails = new PriceDetails(
-                        $lineData['pricing']['price_details']['price'],
-                        $lineData['pricing']['price_details']['product'],
+                        $lineData["pricing"]["price_details"]["price"],
+                        $lineData["pricing"]["price_details"]["product"],
                     );
                     $pricing = new Princing($priceDetails);
-                    $periodEnd = $lineData['period']['end'];
+                    $periodEnd = $lineData["period"]["end"];
 
                     $lineDataHelper = new LinesData(
-                        $lineData['id'],
-                        $lineData['description'],
-                        $lineData['invoice'],
+                        $lineData["id"],
+                        $lineData["description"],
+                        $lineData["invoice"],
                         $parent,
                         $pricing,
                         $periodEnd,
@@ -391,25 +401,25 @@ class StripeController extends Controller
                 }
                 $lines = new Lines($lineDatas);
                 $statusTransitions = new StatusTransitions(
-                    $body['data']['object']['status_transitions']['paid_at'],
+                    $body["data"]["object"]["status_transitions"]["paid_at"],
                 );
                 $object = new StripeInvoicePaidDataDTO(
-                    $body['data']['object']['id'],
-                    $body['data']['object']['amount_paid'],
-                    $body['data']['object']['customer'],
-                    $body['data']['object']['customer_email'],
-                    $body['data']['object']['effective_at'],
-                    $body['data']['object']['invoice_pdf'],
+                    $body["data"]["object"]["id"],
+                    $body["data"]["object"]["amount_paid"],
+                    $body["data"]["object"]["customer"],
+                    $body["data"]["object"]["customer_email"],
+                    $body["data"]["object"]["effective_at"],
+                    $body["data"]["object"]["invoice_pdf"],
                     $lines,
-                    $body['data']['object']['number'],
-                    $body['data']['object']['status'],
+                    $body["data"]["object"]["number"],
+                    $body["data"]["object"]["status"],
                     $statusTransitions,
                 );
                 $data = new StripeInvoicePaidObjectDTO($object);
                 $stripeInvoicePaidDTO = new StripeInvoicePaidDTO(
-                    $body['id'],
-                    $body['object'],
-                    $body['type'],
+                    $body["id"],
+                    $body["object"],
+                    $body["type"],
                     $data,
                 );
 
@@ -417,11 +427,11 @@ class StripeController extends Controller
                  * @var StripeCache | null
                  */
                 $stripeCache = Cache::get(
-                    'stripeCache-'.
+                    "stripeCache-" .
                         $stripeInvoicePaidDTO->data->object->customer,
                 );
 
-                if (! $stripeCache) {
+                if (!$stripeCache) {
                     $stripeCacheHelper = new StripeCache(
                         $stripeInvoicePaidDTO->data->object->lines->data[0]->parent->subscription_item_details->subscription,
                         $stripeInvoicePaidDTO->data->object->customer,
@@ -442,13 +452,16 @@ class StripeController extends Controller
                     );
 
                     Cache::set(
-                        'stripeCache-'.$stripeCacheHelper->customer_id,
+                        "stripeCache-" . $stripeCacheHelper->customer_id,
                         $stripeCacheHelper,
                     );
 
-                    Log::info('Stripe success: Invoice paid, cache created for customer '.$stripeCacheHelper->customer_id);
+                    Log::info(
+                        "Stripe success: Invoice paid, cache created for customer " .
+                            $stripeCacheHelper->customer_id,
+                    );
 
-                    return response()->json(['received' => true]);
+                    return response()->json(["received" => true]);
                 }
 
                 $stripeCache->subscription_id =
@@ -479,7 +492,7 @@ class StripeController extends Controller
                     $stripeInvoicePaidDTO->data->object->lines->data[0]->parent->subscription_item_details->subscription_item;
 
                 Cache::set(
-                    'stripeCache-'.$stripeCache->customer_id,
+                    "stripeCache-" . $stripeCache->customer_id,
                     $stripeCache,
                 );
                 if ($this->isStripeObjectFull($stripeCache)) {
@@ -489,16 +502,16 @@ class StripeController extends Controller
                 }
 
                 break;
-            case 'checkout.session.completed':
+            case "checkout.session.completed":
                 $metadataUUID =
-                    $body['data']['object']['metadata']['plan_uuid'];
+                    $body["data"]["object"]["metadata"]["plan_uuid"];
 
                 if (
-                    ! $metadataUUID ||
+                    !$metadataUUID ||
                     $metadataUUID === null ||
-                    $metadataUUID === ''
+                    $metadataUUID === ""
                 ) {
-                    $metadataUUID = '';
+                    $metadataUUID = "";
                 }
 
                 $checkoutSessionMetadata = new CheckoutSessionCompletedMetadataDTO(
@@ -507,14 +520,14 @@ class StripeController extends Controller
 
                 $checkoutSessionObject = new CheckoutSessionCompletedObjectDTO(
                     $checkoutSessionMetadata,
-                    $body['data']['object']['customer'],
+                    $body["data"]["object"]["customer"],
                 );
                 $checkoutSessionData = new CheckoutSessionCompletedDataDTO(
                     $checkoutSessionObject,
                 );
                 $checkoutSession = new CheckoutSessionCompletedDTO(
-                    $body['id'],
-                    $body['type'],
+                    $body["id"],
+                    $body["type"],
                     $checkoutSessionData,
                 );
 
@@ -522,7 +535,7 @@ class StripeController extends Controller
                  * @var StripeCache
                  */
                 $stripeCache = Cache::get(
-                    'stripeCache-'.$checkoutSession->data->object->customer,
+                    "stripeCache-" . $checkoutSession->data->object->customer,
                 );
 
                 if ($stripeCache) {
@@ -538,7 +551,7 @@ class StripeController extends Controller
                     }
 
                     Cache::put(
-                        'stripeCache-'.$stripeCache->customer_id,
+                        "stripeCache-" . $stripeCache->customer_id,
                         $stripeCache,
                     );
                     break;
@@ -564,20 +577,23 @@ class StripeController extends Controller
                 );
 
                 Cache::put(
-                    'stripeCache-'.$stripeCacheHelper->customer_id,
+                    "stripeCache-" . $stripeCacheHelper->customer_id,
                     $stripeCacheHelper,
                 );
 
-                Log::info('Stripe success: Checkout session completed, cache created for customer '.$stripeCacheHelper->customer_id);
+                Log::info(
+                    "Stripe success: Checkout session completed, cache created for customer " .
+                        $stripeCacheHelper->customer_id,
+                );
 
                 break;
-            case 'customer.subscription.deleted':
+            case "customer.subscription.deleted":
                 $subscriptionDeletedPlan = new SubscriptionDeletedPlanDTO(
-                    $body['data']['object']['status'],
+                    $body["data"]["object"]["status"],
                 );
                 $subscriptionDeletedItemsDataDTO = new SubscriptionDeletedItemsDataDTO(
-                    $body['data']['object']['items']['data'][0][
-                        'current_period_end'
+                    $body["data"]["object"]["items"]["data"][0][
+                        "current_period_end"
                     ],
                 );
                 $subscriptionDeletedItemsDTO = new SubscriptionDeletedItemsDTO([
@@ -586,17 +602,17 @@ class StripeController extends Controller
 
                 $subscriptionDeletedObject = new SubscriptionDeletedObjectDTO(
                     $subscriptionDeletedPlan,
-                    $body['data']['object']['customer'],
-                    $body['data']['object']['id'],
-                    $body['data']['object']['ended_at'],
+                    $body["data"]["object"]["customer"],
+                    $body["data"]["object"]["id"],
+                    $body["data"]["object"]["ended_at"],
                     $subscriptionDeletedItemsDTO,
                 );
                 $subscriptionDeletedData = new SubscriptionDeletedDataDTO(
                     $subscriptionDeletedObject,
                 );
                 $subscriptionDeleted = new SubscriptionDeletedDTO(
-                    $body['id'],
-                    $body['type'],
+                    $body["id"],
+                    $body["type"],
                     $subscriptionDeletedData,
                 );
 
@@ -609,21 +625,21 @@ class StripeController extends Controller
 
                 $subscription = Subscription::query()
                     ->where(
-                        'stripe_user',
-                        '=',
+                        "stripe_user",
+                        "=",
                         $subscriptionDeleted->data->object->customer,
                     )
                     ->first();
 
-                if (! $subscription) {
+                if (!$subscription) {
                     break;
                 }
 
                 $subscription->daily_plans_used = 0;
                 $subscription->weekly_plans_used = 0;
-                $subscription->date_verified = date('Y-m-d');
+                $subscription->date_verified = date("Y-m-d");
                 $subscription->next_billing = gmdate(
-                    'Y-m-d',
+                    "Y-m-d",
                     $subscriptionDeleted->data->object->items->data[0]
                         ->current_period_end,
                 );
@@ -635,68 +651,71 @@ class StripeController extends Controller
                 $subscription->stripe_price = null;
                 $subscription->stripe_product = null;
                 $subscription->plans_id =
-                    '91842dba-9965-42c9-af2a-07fef464b315';
+                    "91842dba-9965-42c9-af2a-07fef464b315";
                 $subscription->price = 0;
-                $subscription->stripe_subscription_item = '';
+                $subscription->stripe_subscription_item = "";
 
                 $subscription->save();
 
-                Log::info('Stripe success: Subscription deleted for customer '.$subscriptionDeleted->data->object->customer);
+                Log::info(
+                    "Stripe success: Subscription deleted for customer " .
+                        $subscriptionDeleted->data->object->customer,
+                );
 
                 break;
-            case 'customer.subscription.updated':
+            case "customer.subscription.updated":
                 $metadata = new SubscriptionUpdatedMetadataDTO(
-                    $body['data']['object']['items']['data'][0]['plan'][
-                        'metadata'
-                    ]['plan_uuid'],
+                    $body["data"]["object"]["items"]["data"][0]["plan"][
+                        "metadata"
+                    ]["plan_uuid"],
                 );
 
                 $planDTO = new PlanDTO(
-                    $body['data']['object']['items']['data'][0]['plan']['id'],
-                    $body['data']['object']['items']['data'][0]['plan'][
-                        'amount'
+                    $body["data"]["object"]["items"]["data"][0]["plan"]["id"],
+                    $body["data"]["object"]["items"]["data"][0]["plan"][
+                        "amount"
                     ],
-                    $body['data']['object']['items']['data'][0]['plan'][
-                        'product'
+                    $body["data"]["object"]["items"]["data"][0]["plan"][
+                        "product"
                     ],
                     $metadata,
                 );
 
                 $subscriptionItemsData = new SubscriptionItemsData(
-                    $body['data']['object']['items']['data'][0]['id'],
-                    $body['data']['object']['items']['data'][0][
-                        'current_period_end'
+                    $body["data"]["object"]["items"]["data"][0]["id"],
+                    $body["data"]["object"]["items"]["data"][0][
+                        "current_period_end"
                     ],
                     $planDTO,
-                    $body['data']['object']['items']['data'][0]['subscription'],
+                    $body["data"]["object"]["items"]["data"][0]["subscription"],
                 );
                 $subscriptionItems = new SubscriptionItems([
                     $subscriptionItemsData,
                 ]);
                 $objectDataDTO = new ObjectDTO(
-                    $body['data']['object']['id'],
-                    $body['data']['object']['customer'],
+                    $body["data"]["object"]["id"],
+                    $body["data"]["object"]["customer"],
                     $subscriptionItems,
-                    $body['data']['object']['status'],
+                    $body["data"]["object"]["status"],
                 );
 
                 $dataDTO = new SubscriptionUpdatedDataDTO($objectDataDTO, null);
                 $subscriptionUpdatedDTO = new SubscriptionUpdatedDTO(
-                    $body['id'],
-                    $body['type'],
+                    $body["id"],
+                    $body["type"],
                     $dataDTO,
                 );
 
                 $defaultPaymentMethodExists = array_key_exists(
-                    'default_payment_method',
-                    $body['data']['previous_attributes'],
+                    "default_payment_method",
+                    $body["data"]["previous_attributes"],
                 );
-                $defaultPaymentMethodPrevious = '';
+                $defaultPaymentMethodPrevious = "";
 
                 if ($defaultPaymentMethodExists) {
                     $defaultPaymentMethodPrevious =
-                        $body['data']['previous_attributes'][
-                            'default_payment_method'
+                        $body["data"]["previous_attributes"][
+                            "default_payment_method"
                         ];
                 }
 
@@ -709,30 +728,30 @@ class StripeController extends Controller
 
                 $subscription = Subscription::query()
                     ->where(
-                        'stripe_user',
-                        '=',
+                        "stripe_user",
+                        "=",
                         $subscriptionUpdatedDTO->data->object->customer,
                     )
                     ->first();
 
-                if (! $subscription) {
+                if (!$subscription) {
                     break;
                 }
 
                 $plan = Plans::query()
                     ->where(
-                        'uuid',
-                        '=',
+                        "uuid",
+                        "=",
                         $subscriptionUpdatedDTO->data->object->items->data[0]
                             ->plan->metadata->plan_uuid,
                     )
                     ->first();
 
-                if (! $plan) {
+                if (!$plan) {
                     $plan = Plans::query()
                         ->where(
-                            'price',
-                            '=',
+                            "price",
+                            "=",
                             $subscriptionUpdatedDTO->data->object->items
                                 ->data[0]->plan->amount / 100,
                         )
@@ -740,9 +759,11 @@ class StripeController extends Controller
                 }
 
                 $subscription->plans_id =
-                    $plan?->uuid ?? '91842dba-9965-42c9-af2a-07fef464b315';
+                    $plan?->uuid ?? "91842dba-9965-42c9-af2a-07fef464b315";
+                $subscription->daily_plans_used = 0;
+                $subscription->weekly_plans_used = 0;
                 $subscription->next_billing = gmdate(
-                    'Y-m-d',
+                    "Y-m-d",
                     $subscriptionUpdatedDTO->data->object->items->data[0]
                         ->current_period_end,
                 );
@@ -755,73 +776,76 @@ class StripeController extends Controller
                 $subscription->price =
                     $subscriptionUpdatedDTO->data->object->items->data[0]->plan
                         ->amount / 100;
-                $subscription->date_verified = date('Y-m-d');
+                $subscription->date_verified = date("Y-m-d");
                 $subscription->status =
                     $subscriptionUpdatedDTO->data->object->status;
 
                 $subscription->save();
 
-                Log::info('Stripe success: Subscription updated for customer '.$subscriptionUpdatedDTO->data->object->customer);
+                Log::info(
+                    "Stripe success: Subscription updated for customer " .
+                        $subscriptionUpdatedDTO->data->object->customer,
+                );
 
                 break;
-            case 'payment_method.attached':
-                $walletHelper = $body['data']['object']['card']['wallet'];
-                $walletType = '';
+            case "payment_method.attached":
+                $walletHelper = $body["data"]["object"]["card"]["wallet"];
+                $walletType = "";
 
                 if ($walletHelper !== null) {
                     $walletType =
-                        $body['data']['object']['card']['wallet']['type'];
+                        $body["data"]["object"]["card"]["wallet"]["type"];
                 }
 
                 $wallet = new WalletDTO($walletType);
                 $cvcChecks =
-                    $body['data']['object']['card']['checks']['cvc_check'];
+                    $body["data"]["object"]["card"]["checks"]["cvc_check"];
 
-                if (! $cvcChecks || $cvcChecks === null) {
-                    $cvcChecks = '';
+                if (!$cvcChecks || $cvcChecks === null) {
+                    $cvcChecks = "";
                 }
 
                 $checks = new CardChecksDTO($cvcChecks);
 
                 if (
-                    ! $wallet->type ||
+                    !$wallet->type ||
                     $wallet->type === null ||
-                    $wallet->type === ''
+                    $wallet->type === ""
                 ) {
                     $wallet = null;
                 }
                 $card = new CardDTO(
-                    $body['data']['object']['card']['brand'],
-                    $body['data']['object']['card']['last4'],
+                    $body["data"]["object"]["card"]["brand"],
+                    $body["data"]["object"]["card"]["last4"],
                     $checks,
                     $wallet,
                 );
 
-                if ($card->wallet && $card->wallet->type === 'google_pay') {
-                    $customer = $body['data']['object']['customer'];
+                if ($card->wallet && $card->wallet->type === "google_pay") {
+                    $customer = $body["data"]["object"]["customer"];
                     $email =
-                        $body['data']['object']['billing_details']['email'];
+                        $body["data"]["object"]["billing_details"]["email"];
 
                     $user = User::query()
-                        ->where('google_email', '=', $email)
-                        ->orWhere('github_email', '=', $email)
+                        ->where("google_email", "=", $email)
+                        ->orWhere("github_email", "=", $email)
                         ->first();
 
-                    $useruuid = $user?->uuid ?? '';
+                    $useruuid = $user?->uuid ?? "";
 
                     $subscriptionQuery = Subscription::query()->where(
-                        'stripe_user',
-                        '=',
+                        "stripe_user",
+                        "=",
                         $customer,
                     );
 
-                    if ($useruuid !== '') {
-                        $subscriptionQuery->orWhere('user_id', '=', $useruuid);
+                    if ($useruuid !== "") {
+                        $subscriptionQuery->orWhere("user_id", "=", $useruuid);
                     }
 
                     $subscription = $subscriptionQuery->first();
 
-                    if (! $subscription) {
+                    if (!$subscription) {
                         $stripeCache = new StripeCache(
                             null,
                             $customer,
@@ -839,10 +863,9 @@ class StripeController extends Controller
                             null,
                             null,
                             null,
-                            null,
                         );
 
-                        Cache::put('stripeCache-'.$customer, $stripeCache);
+                        Cache::put("stripeCache-" . $customer, $stripeCache);
                         break;
                     }
 
@@ -850,21 +873,24 @@ class StripeController extends Controller
                     $subscription->last_four_digits = $card->last4;
                     $subscription->save();
 
-                    Log::info('Stripe success: Payment method attached for customer '.$customer);
+                    Log::info(
+                        "Stripe success: Payment method attached for customer " .
+                            $customer,
+                    );
 
                     break;
                 }
 
                 $paymentAttachedObject = new PaymentAttachedObjectDTO(
-                    $body['data']['object']['customer'],
+                    $body["data"]["object"]["customer"],
                 );
                 $paymentAttachedData = new PaymentAttachedDataDTO(
                     $paymentAttachedObject,
                 );
                 $paymentAttached = new PaymentAttachedDTO(
                     $paymentAttachedData,
-                    $body['id'],
-                    $body['type'],
+                    $body["id"],
+                    $body["type"],
                 );
 
                 $this->changePaymentMethodSubscription(
@@ -873,17 +899,17 @@ class StripeController extends Controller
                 );
 
                 break;
-            case 'customer.updated':
+            case "customer.updated":
                 $customerUpdatedDataObject = new CustomerUpdatedObjectDTO(
-                    $body['data']['object']['id'],
-                    $body['data']['object']['email'],
+                    $body["data"]["object"]["id"],
+                    $body["data"]["object"]["email"],
                 );
 
-                $hasNoPreviousAttribute = $body['data']['previous_attributes'];
+                $hasNoPreviousAttribute = $body["data"]["previous_attributes"];
 
                 if (
-                    ! array_key_exists(
-                        'invoice_settings',
+                    !array_key_exists(
+                        "invoice_settings",
                         $hasNoPreviousAttribute,
                     )
                 ) {
@@ -891,15 +917,15 @@ class StripeController extends Controller
                 }
 
                 $previousDefaultPayment =
-                    $body['data']['previous_attributes']['invoice_settings'][
-                        'default_payment_method'
+                    $body["data"]["previous_attributes"]["invoice_settings"][
+                        "default_payment_method"
                     ];
 
                 if (
-                    ! $previousDefaultPayment ||
+                    !$previousDefaultPayment ||
                     $previousDefaultPayment === null
                 ) {
-                    $previousDefaultPayment = '';
+                    $previousDefaultPayment = "";
                 }
 
                 $previousAttributeDTO = new CustomerUpdatedPreviousAttributesDTO(
@@ -910,8 +936,8 @@ class StripeController extends Controller
                     $previousAttributeDTO,
                 );
                 $customerUpdated = new CustomerUpdatedDTO(
-                    $body['id'],
-                    $body['type'],
+                    $body["id"],
+                    $body["type"],
                     $customerUpdatedDataDTO,
                 );
 
@@ -925,7 +951,7 @@ class StripeController extends Controller
 
             default:
                 Log::info(
-                    'Method not founded for this event: '.$body['type'],
+                    "Method not founded for this event: " . $body["type"],
                 );
                 break;
         }

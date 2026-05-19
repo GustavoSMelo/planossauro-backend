@@ -508,7 +508,7 @@ class UserController extends Controller
                 "loginType" => ["required", "string"],
             ]);
 
-            if ($validator->failed()) {
+            if ($validator->fails()) {
                 return response()->json(
                     [
                         "message" => "validation failed",
