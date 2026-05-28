@@ -147,6 +147,7 @@ class UserController extends Controller
 
             $githubValidationCode = rand(10000, 99999);
             $googleValidationCode = rand(10000, 99999);
+            $facebookValidationCode = rand(10000, 99999);
             $smsValidationCode = rand(10000, 99999);
 
             $userFinded = User::query()
@@ -178,6 +179,7 @@ class UserController extends Controller
                 $userFinded->github_validation_code = $githubValidationCode;
                 $userFinded->google_validation_code = $googleValidationCode;
                 $userFinded->sms_validation_code = $smsValidationCode;
+                $userFinded->facebook_validation_code = $facebookValidationCode;
 
                 $userFinded->save();
             } else {
@@ -191,6 +193,7 @@ class UserController extends Controller
                     "github_validation_code" => $githubValidationCode,
                     "google_validation_code" => $googleValidationCode,
                     "sms_validation_code" => $smsValidationCode,
+                    "facebook_validation_code" => $facebookValidationCode
                 ]);
 
                 PlanningHour::create([
@@ -351,6 +354,7 @@ class UserController extends Controller
             $userFinded->cellphone_number = $request->input("cellphone_number");
             $userFinded->github_validation_code = rand(10000, 99999);
             $userFinded->google_validation_code = rand(10000, 99999);
+            $userFinded->facebook_validation_code = rand(10000, 99999);
             $userFinded->github_is_validated =
                 $userFinded->github_email === $request->input("github_email") &&
                 $userFinded->github_is_validated
@@ -475,9 +479,11 @@ class UserController extends Controller
     public function findByGithubEmail(string $githubEmail)
     {
         try {
-            return User::query()
+            $exists = User::query()
                 ->where("github_email", "=", $githubEmail)
-                ->first();
+                ->exists();
+
+            return response()->json(["exists" => $exists]);
         } catch (\Exception $e) {
             return response()->json(
                 ["message" => "User not founded", "error" => $e],
@@ -489,9 +495,11 @@ class UserController extends Controller
     public function findByGoogleEmail(string $googleEmail)
     {
         try {
-            return User::query()
+            $exists = User::query()
                 ->where("google_email", "=", $googleEmail)
-                ->first();
+                ->exists();
+
+            return response()->json(["exists" => $exists]);
         } catch (\Exception $e) {
             return response()->json(
                 ["message" => "User not founded", "error" => $e],
@@ -520,11 +528,16 @@ class UserController extends Controller
 
             $googleCode = rand(10000, 99999);
             $githubCode = rand(10000, 99999);
+            $facebookCode = rand(10000, 99999);
+
             $uuid = $request->input("uuid");
 
             $user = User::query()->where("uuid", "=", $uuid)->get()->first();
+
             $user->github_validation_code = $githubCode;
             $user->google_validation_code = $googleCode;
+            $user->facebook_validation_code = $facebookCode;
+
             $user->save();
 
             if ($request->input("loginType") === "github") {
