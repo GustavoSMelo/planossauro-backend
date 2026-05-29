@@ -167,7 +167,8 @@ class AuthController extends Controller
             $accessToken = json_decode($response->body())->access_token;
 
             return response()->json([
-                'access_token' => $accessToken
+                'access_token' => $accessToken,
+                'json' => $response->json()
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -187,13 +188,25 @@ class AuthController extends Controller
 
             $id = json_decode($response->body())->id;
             $email = json_decode($response->body())->email;
+            $name = json_decode($response->body())->name;
 
-            $user = User::query()->where('facebook_id', '=', $id)->first();
+            Log::info($response->body());
+
+            $user = User::query()
+                ->where('facebook_email', '=', $email)
+                ->where('facebook_id', '=', $id)
+                ->first();
 
             if (!$user || empty($user) || $user === null) {
                 return response()->json([
-                    'Error' => "user not founded"
-                ], 401);
+                    'message' => 'User not found',
+                    'token' => [
+                        'plainTextToken' => ''
+                    ],
+                    'email' => $email,
+                    'id' => $id,
+                    'name' => $name
+                ]);
             }
 
             if ($user->facebook_email !== $email) {
@@ -207,7 +220,11 @@ class AuthController extends Controller
             return response()->json([
                 'token' => $token,
                 'type' => 'Bearer',
-                'message' => 'Auth granted'
+                'message' => 'Auth granted',
+                'email' => $email,
+                'id' => $id,
+                'name' => $name,
+                'user' => $user
             ]);
         } catch (\Exception $e) {
             Log::error($e);
