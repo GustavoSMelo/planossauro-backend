@@ -35,8 +35,11 @@ class User extends Authenticatable
         'uuid',
         'google_email',
         'github_email',
+        'facebook_email',
         'github_id',
         'github_validation_code',
+        'facebook_validation_code',
+        'facebook_is_validated',
         'github_is_validated',
         'full_name',
         'cellphone_number',
@@ -45,6 +48,7 @@ class User extends Authenticatable
         'google_validation_code',
         'google_is_validated',
         'google_id',
+        'facebook_id',
         'deleted_at',
     ];
 
