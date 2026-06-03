@@ -124,8 +124,6 @@ class AuthController extends Controller
 
             $user = User::query()
                 ->where("google_email", "=", $email)
-                ->orWhere("facebook_email", "=", $email)
-                ->orWhere("github_email", "=", $email)
                 ->first();
 
             Log::info("user finded: " . $user);
