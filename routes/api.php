@@ -238,6 +238,9 @@ Route::post("/support/email/{userUUID}", [
 Route::post("/webhook/payment", [StripeController::class, "handler"]);
 
 // Auth routes
+Route::post("/auth/register", [AuthController::class, "register"])->middleware("throttle:20,1");
+Route::post("/auth/login", [AuthController::class, "login"])->middleware("throttle:20,1");
+
 Route::get("/token/github/{code}", [
     AuthController::class,
     "githubAccessToken",

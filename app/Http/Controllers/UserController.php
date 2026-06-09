@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PlanningHour;
 use App\Models\Subscription;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -397,6 +398,20 @@ class UserController extends Controller
                         "uuid",
                     ),
                 ],
+                "user_email" => [
+                    "nullable",
+                    "string",
+                    "email",
+                    Rule::unique("user", "user_email")->ignore(
+                        $userUUID,
+                        "uuid",
+                    )
+                ],
+                "user_password" => [
+                    "nullable",
+                    "string",
+                    "min:8"
+                ]
             ]);
 
             if ($validate->failed()) {
@@ -441,6 +456,9 @@ class UserController extends Controller
                 $userFinded->google_is_validated
                     ? true
                     : false;
+
+            $userFinded->user_email = $request->input("user_email");
+            $userFinded->user_password = Hash::make($request->input("user_password"));
 
             $userFinded->save();
 
@@ -635,6 +653,7 @@ class UserController extends Controller
             $googleCode = rand(10000, 99999);
             $githubCode = rand(10000, 99999);
             $facebookCode = rand(10000, 99999);
+            $validationCode = rand(10000, 99999);
 
             $uuid = $request->input("uuid");
 
@@ -643,6 +662,7 @@ class UserController extends Controller
             $user->github_validation_code = $githubCode;
             $user->google_validation_code = $googleCode;
             $user->facebook_validation_code = $facebookCode;
+            $user->email_validation_code = $validationCode;
 
             $user->save();
 
@@ -672,7 +692,7 @@ class UserController extends Controller
                         "validation_code" => $googleCode,
                     ])->render(),
                 ]);
-            } else {
+            } else if ($request->input('loginType') === 'facebook') {
                 Resend::emails()->send([
                     "from" =>
                         config("services.resend.name") .
@@ -685,6 +705,19 @@ class UserController extends Controller
                         "validation_code" => $facebookCode,
                     ])->render(),
                 ]);
+            } else {
+                Resend::emails()->send([
+                    "from" =>
+                        config("services.resend.name") .
+                        "<" .
+                        config("services.resend.mail") .
+                        ">",
+                    "to" => $user->user_email,
+                    "subject" => "Planossauro - Validation Code",
+                    "html" => view("mail.validation-mail", [
+                        "validation_code" => $validationCode,
+                    ])->render(),
+                ]);
             }
         } catch (\Exception $e) {
             return response()->json(
@@ -694,7 +727,7 @@ class UserController extends Controller
         }
     }
 
-    public function validateGithubEmail(string $userUUID)
+    private function validateGithubEmail(string $userUUID)
     {
         try {
             $userFinded = User::query()->where("uuid", "=", $userUUID)->first();
@@ -713,7 +746,7 @@ class UserController extends Controller
         }
     }
 
-    public function validateGoogleEmail(string $userUUID)
+    private function validateGoogleEmail(string $userUUID)
     {
         try {
             $userFinded = User::query()->where("uuid", "=", $userUUID)->first();
@@ -732,7 +765,7 @@ class UserController extends Controller
         }
     }
 
-    public function validateFacebookEmail(string $userUUID)
+    private function validateFacebookEmail(string $userUUID)
     {
         try {
             $userFinded = User::query()->where("uuid", "=", $userUUID)->first();
@@ -751,6 +784,25 @@ class UserController extends Controller
         }
     }
 
+        public function validatePlanossauroEmail(string $userUUID)
+    {
+        try {
+            $userFinded = User::query()->where("uuid", "=", $userUUID)->first();
+            $userFinded->update([
+                "email_is_validated" => true,
+            ]);
+
+            return response()->json([
+                "message" => "gmail validated with success",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(
+                ["error" => "User not founded", "errorData" => $e],
+                400,
+            );
+        }
+    }
+
     public function validate(string $userUUID, Request $request)
     {
         try {
@@ -758,7 +810,7 @@ class UserController extends Controller
                 "loginType" => [
                     "required",
                     "string",
-                    "in:google,github,facebook",
+                    "in:google,github,facebook,email",
                 ],
                 "validationCode" => ["required", "string"],
             ]);
@@ -796,9 +848,18 @@ class UserController extends Controller
                         200,
                     );
                 }
-            } else {
+            } elseif ($loginType === 'facebook') {
                 if ($validationCode == $user->facebook_validation_code) {
                     $this->validateFacebookEmail($user->uuid);
+
+                    return response()->json(
+                        ["message" => "user validated with success"],
+                        200,
+                    );
+                }
+            } else {
+                 if ($validationCode == $user->email_validation_code) {
+                    $this->validatePlanossauroEmail($user->uuid);
 
                     return response()->json(
                         ["message" => "user validated with success"],
