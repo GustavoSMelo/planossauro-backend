@@ -64,6 +64,21 @@ Route::prefix("user")->group(function () {
     ])
         ->middleware("auth:sanctum")
         ->middleware(ValidateUserTokenByRoute::class);
+
+    Route::get("/github/{githubEmail}", [
+        UserController::class,
+        "findByGithubEmail",
+    ]);
+
+    Route::get("/google/{googleEmail}", [
+        UserController::class,
+        "findByGoogleEmail",
+    ]);
+
+    Route::get("/facebook/{facebookEmail}", [
+        UserController::class,
+        "findByFacebookEmail",
+    ]);
 });
 
 // Planning routes
