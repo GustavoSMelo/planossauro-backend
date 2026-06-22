@@ -64,6 +64,21 @@ Route::prefix("user")->group(function () {
     ])
         ->middleware("auth:sanctum")
         ->middleware(ValidateUserTokenByRoute::class);
+
+    Route::get("/github/{githubEmail}", [
+        UserController::class,
+        "findByGithubEmail",
+    ]);
+
+    Route::get("/google/{googleEmail}", [
+        UserController::class,
+        "findByGoogleEmail",
+    ]);
+
+    Route::get("/facebook/{facebookEmail}", [
+        UserController::class,
+        "findByFacebookEmail",
+    ]);
 });
 
 // Planning routes
@@ -238,6 +253,9 @@ Route::post("/support/email/{userUUID}", [
 Route::post("/webhook/payment", [StripeController::class, "handler"]);
 
 // Auth routes
+Route::post("/auth/register", [AuthController::class, "register"])->middleware("throttle:20,1");
+Route::post("/auth/login", [AuthController::class, "login"])->middleware("throttle:20,1");
+
 Route::get("/token/github/{code}", [
     AuthController::class,
     "githubAccessToken",

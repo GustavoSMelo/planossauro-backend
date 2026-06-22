@@ -100,7 +100,7 @@ class UserControllerTest extends TestCase
         $response = $this->postJson('/api/user', $userData);
 
         $response->assertStatus(400);
-        $response->assertJsonPath('error', 'Github and Google email is null, please, provide at least one of them');
+        $response->assertJsonPath('error', 'Github, Google and Facebook email is null, please, provide at least one of them');
     }
 
     public function test_store_fails_with_github_email_without_github_id(): void

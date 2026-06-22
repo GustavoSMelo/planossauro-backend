@@ -23,9 +23,11 @@ class UserFactory extends Factory
             'github_validation_code' => rand(10000, 99999),
             'google_validation_code' => rand(10000, 99999),
             'sms_validation_code' => rand(10000, 99999),
+            'facebook_validation_code' => rand(10000, 99999),
             'github_is_validated' => false,
             'google_is_validated' => false,
             'sms_is_validated' => false,
+            'facebook_is_validated' => false,
             'deleted_at' => null,
         ];
     }

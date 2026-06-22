@@ -2,9 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanStatus;
+use App\Models\PlanningHour;
+use App\Models\Plans;
+use App\Models\Subscription;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Resend\Laravel\Facades\Resend;
 
 class AuthController extends Controller
 {
@@ -260,6 +268,234 @@ class AuthController extends Controller
             return response()->json([
                 "Error" => $e,
             ]);
+        }
+    }
+
+    public function register(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                "full_name" => ["required", "string", "max:255", "min:3"],
+                "email" => ["required", "string", "email", "max:255"],
+                "cellphone_number" => ["required", "string", "max:15", "min:11"],
+                "password" => ["required", "string", "min:8"],
+                "initial_hour" => ["required", "string"],
+                "interval_between_classes" => ["required", "string"],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(
+                    [
+                        "message" => "Validation failed",
+                        "errors" => $validator->errors(),
+                    ],
+                    400,
+                );
+            }
+
+            $email = $request->input("email");
+            $emailValidationCode = rand(10000, 99999);
+
+            $existingUser = User::query()
+                ->where("user_email", "=", $email)
+                ->orWhere("github_email", "=", $email)
+                ->orWhere("google_email", "=", $email)
+                ->orWhere("facebook_email", "=", $email)
+                ->first();
+
+            if ($existingUser) {
+                if ($existingUser->user_password) {
+                    if (!Hash::check($request->input("password"), $existingUser->user_password)) {
+                        return response()->json(
+                            [
+                                "message" => "Email already in use with a different password",
+                                "error" => "Invalid credentials",
+                            ],
+                            401,
+                        );
+                    }
+                }
+
+                $existingUser->full_name = $request->input("full_name");
+                $existingUser->user_email = $email;
+                $existingUser->user_password = Hash::make($request->input("password"));
+                $existingUser->cellphone_number = $request->input("cellphone_number");
+                $existingUser->email_is_validated = false;
+                $existingUser->email_validation_code = $emailValidationCode;
+                $existingUser->save();
+
+                $planningHour = PlanningHour::query()
+                    ->where("user_id", "=", $existingUser->uuid)
+                    ->first();
+
+                if ($planningHour) {
+                    $planningHour->initial_hour = $request->input("initial_hour");
+                    $planningHour->interval_between_classes = $request->input("interval_between_classes");
+                    $planningHour->save();
+                } else {
+                    PlanningHour::create([
+                        "initial_hour" => $request->input("initial_hour"),
+                        "interval_between_classes" => $request->input("interval_between_classes"),
+                        "user_id" => $existingUser->uuid,
+                    ]);
+                }
+
+                try {
+                    Resend::emails()->send([
+                        "from" => config("services.resend.name") . "<" . config("services.resend.mail") . ">",
+                        "to" => $email,
+                        "subject" => "Planossauro - Email Validation Code",
+                        "html" => view("mail.validation-mail", [
+                            "validation_code" => $emailValidationCode,
+                        ])->render(),
+                    ]);
+                } catch (\Exception $err) {
+                    Log::error([
+                        "message" => "Error to send email to user",
+                        "error" => $err,
+                    ]);
+                }
+
+                $token = $existingUser->createToken("auth");
+
+                return response()->json(
+                    [
+                        "message" => "User updated and registered with success",
+                        "user" => $existingUser,
+                        "token" => $token,
+                        "type" => "Bearer",
+                    ],
+                    200,
+                );
+            }
+
+            $user = User::create([
+                "full_name" => $request->input("full_name"),
+                "user_email" => $email,
+                "user_password" => Hash::make($request->input("password")),
+                "cellphone_number" => $request->input("cellphone_number"),
+                "email_is_validated" => false,
+                "email_validation_code" => $emailValidationCode,
+                "sms_validation_code" => rand(10000, 99999),
+                "google_validation_code" => rand(10000, 99999),
+                "github_validation_code" => rand(10000, 99999),
+                "facebook_validation_code" => rand(10000, 99999),
+            ]);
+
+            PlanningHour::create([
+                "initial_hour" => $request->input("initial_hour"),
+                "interval_between_classes" => $request->input("interval_between_classes"),
+                "user_id" => $user->uuid,
+            ]);
+
+            $freePlan = Plans::query()->where("price", "=", 0)->first();
+            if (config("app.env") === "local") {
+                $freePlan = Plans::query()->where("plan_name", "=", "adm")->first();
+            }
+
+            if ($freePlan) {
+                Subscription::create([
+                    "daily_plans_used" => 0,
+                    "weekly_plans_used" => 0,
+                    "date_verified" => null,
+                    "next_billing" => date("Y-m-d", strtotime("+1 month")),
+                    "status" => PlanStatus::PAID->value,
+                    "last_four_digits" => null,
+                    "card_brand" => null,
+                    "user_id" => $user->uuid,
+                    "plans_id" => $freePlan->uuid,
+                ]);
+            }
+
+            try {
+                Resend::emails()->send([
+                    "from" => config("services.resend.name") . "<" . config("services.resend.mail") . ">",
+                    "to" => $email,
+                    "subject" => "Planossauro - Email Validation Code",
+                    "html" => view("mail.validation-mail", [
+                        "validation_code" => $emailValidationCode,
+                    ])->render(),
+                ]);
+            } catch (\Exception $err) {
+                Log::error([
+                    "message" => "Error to send email to user",
+                    "error" => $err,
+                ]);
+            }
+
+            $token = $user->createToken("auth");
+
+            return response()->json(
+                [
+                    "message" => "User registered with success",
+                    "user" => $user,
+                    "token" => $token,
+                    "type" => "Bearer",
+                ],
+                201,
+            );
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(
+                [
+                    "message" => "Error on register",
+                    "error" => $e,
+                ],
+                400,
+            );
+        }
+    }
+
+    public function login(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                "email" => ["required", "string", "email"],
+                "password" => ["required", "string"],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(
+                    [
+                        "message" => "Validation failed",
+                        "errors" => $validator->errors(),
+                    ],
+                    400,
+                );
+            }
+
+            $user = User::query()
+                ->where("user_email", "=", $request->input("email"))
+                ->first();
+
+            if (!$user || !Hash::check($request->input("password"), $user->user_password)) {
+                return response()->json(
+                    [
+                        "message" => "Invalid credentials",
+                        "error" => "Unauthenticated",
+                    ],
+                    401,
+                );
+            }
+
+            $user->tokens()->delete();
+            $token = $user->createToken("auth");
+
+            return response()->json([
+                "token" => $token,
+                "type" => "Bearer",
+                "message" => "Auth granted",
+                "user" => $user,
+            ]);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(
+                [
+                    "message" => "Error on login",
+                    "error" => $e,
+                ],
+                400,
+            );
         }
     }
 
