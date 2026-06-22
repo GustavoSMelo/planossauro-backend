@@ -35,8 +35,11 @@ class User extends Authenticatable
         'uuid',
         'google_email',
         'github_email',
+        'facebook_email',
         'github_id',
         'github_validation_code',
+        'facebook_validation_code',
+        'facebook_is_validated',
         'github_is_validated',
         'full_name',
         'cellphone_number',
@@ -45,13 +48,20 @@ class User extends Authenticatable
         'google_validation_code',
         'google_is_validated',
         'google_id',
+        'facebook_id',
         'deleted_at',
+        'user_email',
+        'user_password',
+        'email_is_validated',
+        'email_validation_code',
     ];
 
     protected $hidden = [
         'github_validation_code',
         'google_validation_code',
         'sms_validation_code',
+        'user_password',
+        'email_validation_code',
     ];
 
     protected $casts = [

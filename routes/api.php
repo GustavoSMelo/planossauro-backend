@@ -40,16 +40,6 @@ Route::prefix("user")->group(function () {
         ->middleware("auth:sanctum")
         ->middleware(ValidateUserTokenByRoute::class);
 
-    Route::get("/github/{githubEmail}", [
-        UserController::class,
-        "findByGithubEmail",
-    ]);
-
-    Route::get("/google/{googleEmail}", [
-        UserController::class,
-        "findByGoogleEmail",
-    ]);
-
     Route::post("/resend/validationcode", [
         UserController::class,
         "resendEmail",
@@ -74,6 +64,21 @@ Route::prefix("user")->group(function () {
     ])
         ->middleware("auth:sanctum")
         ->middleware(ValidateUserTokenByRoute::class);
+
+    Route::get("/github/{githubEmail}", [
+        UserController::class,
+        "findByGithubEmail",
+    ]);
+
+    Route::get("/google/{googleEmail}", [
+        UserController::class,
+        "findByGoogleEmail",
+    ]);
+
+    Route::get("/facebook/{facebookEmail}", [
+        UserController::class,
+        "findByFacebookEmail",
+    ]);
 });
 
 // Planning routes
@@ -248,18 +253,34 @@ Route::post("/support/email/{userUUID}", [
 Route::post("/webhook/payment", [StripeController::class, "handler"]);
 
 // Auth routes
+Route::post("/auth/register", [AuthController::class, "register"])->middleware("throttle:20,1");
+Route::post("/auth/login", [AuthController::class, "login"])->middleware("throttle:20,1");
+
 Route::get("/token/github/{code}", [
     AuthController::class,
     "githubAccessToken",
 ])->middleware("throttle:20,1");
+
 Route::get("/auth/github/{token}", [
     AuthController::class,
     "githubAuth",
 ])->middleware("throttle:20,1");
+
 Route::get("/auth/google/{token}", [
     AuthController::class,
     "googleAuth",
 ])->middleware("throttle:20,1");
+
+Route::get("/token/facebook/{code}", [
+    AuthController::class,
+    "facebookAccessToken"
+])->middleware("throttle:20,1");
+
+Route::get("/auth/facebook/{token}", [
+    AuthController::class,
+    'facebookAuth'
+])->middleware("throttle:20,1");
+
 Route::delete("/logout/{userUUID}", [AuthController::class, "logout"])
     ->middleware("throttle:10,1")
     ->middleware("auth:sanctum");
