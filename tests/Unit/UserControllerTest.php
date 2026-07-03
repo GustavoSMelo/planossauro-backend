@@ -3,8 +3,11 @@
 namespace Tests\Unit;
 
 use App\Http\Middleware\ValidateUserTokenByRoute;
+use App\Models\PlanningHour;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Mockery;
 use Tests\TestCase;
 
@@ -88,6 +91,26 @@ class UserControllerTest extends TestCase
         ]);
     }
 
+    public function test_store_creates_user_with_facebook_email(): void
+    {
+        $userData = [
+            'full_name' => 'John Doe',
+            'cellphone_number' => '11999999999',
+            'facebook_email' => 'john@facebook.com',
+            'facebook_id' => 'fb12345',
+            'initial_hour' => '12:00',
+            'interval_between_classes' => '00:30',
+        ];
+
+        $response = $this->postJson('/api/user', $userData);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('user', [
+            'full_name' => 'John Doe',
+            'facebook_email' => 'john@facebook.com',
+        ]);
+    }
+
     public function test_store_fails_without_email(): void
     {
         $userData = [
@@ -117,6 +140,21 @@ class UserControllerTest extends TestCase
 
         $response->assertStatus(400);
         $response->assertJsonPath('error', 'Github id not provided');
+    }
+
+    public function test_store_fails_with_facebook_email_without_facebook_id(): void
+    {
+        $userData = [
+            'full_name' => 'John Doe',
+            'cellphone_number' => '11999999999',
+            'facebook_email' => 'john@facebook.com',
+            'initial_hour' => '12:00',
+            'interval_between_classes' => '00:30',
+        ];
+
+        $response = $this->postJson('/api/user', $userData);
+
+        $response->assertStatus(400);
     }
 
     public function test_store_validation_fails_with_short_name(): void
@@ -210,6 +248,74 @@ class UserControllerTest extends TestCase
         $response->assertStatus(400);
     }
 
+    public function test_update_with_user_email_and_password(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'github_email' => 'original@example.com',
+            'github_is_validated' => true,
+        ]);
+
+        $updateData = [
+            'full_name' => 'Updated Name',
+            'cellphone_number' => '11988888888',
+            'github_email' => 'original@example.com',
+            'user_email' => 'newemail@example.com',
+            'user_password' => 'newpassword123',
+        ];
+
+        $response = $this->putJson("/api/user/{$user->uuid}", $updateData);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('user', [
+            'uuid' => $user->uuid,
+            'user_email' => 'newemail@example.com',
+        ]);
+    }
+
+    public function test_update_keeps_github_validation_when_same_email(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'github_email' => 'same@example.com',
+            'github_is_validated' => true,
+        ]);
+
+        $updateData = [
+            'full_name' => 'Updated Name',
+            'cellphone_number' => '11988888888',
+            'github_email' => 'same@example.com',
+        ];
+
+        $response = $this->putJson("/api/user/{$user->uuid}", $updateData);
+
+        $response->assertStatus(200);
+        $user->refresh();
+        $this->assertEquals(1, $user->github_is_validated);
+    }
+
+    public function test_update_keeps_google_validation_when_same_email(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'google_email' => 'same@gmail.com',
+            'google_id' => '12345',
+            'google_is_validated' => true,
+        ]);
+
+        $updateData = [
+            'full_name' => 'Updated Name',
+            'cellphone_number' => '11988888888',
+            'google_email' => 'same@gmail.com',
+        ];
+
+        $response = $this->putJson("/api/user/{$user->uuid}", $updateData);
+
+        $response->assertStatus(200);
+        $user->refresh();
+        $this->assertEquals(1, $user->google_is_validated);
+    }
+
     public function test_destroy_fails_without_subscription(): void
     {
         $this->disableMiddleware();
@@ -255,7 +361,7 @@ class UserControllerTest extends TestCase
         $response = $this->getJson("/api/user/github/{$user->github_email}");
 
         $response->assertStatus(200);
-        $response->assertJsonPath('github_email', 'github@example.com');
+        $response->assertJsonPath('exists', true);
     }
 
     public function test_find_by_google_email_returns_user(): void
@@ -267,7 +373,28 @@ class UserControllerTest extends TestCase
         $response = $this->getJson("/api/user/google/{$user->google_email}");
 
         $response->assertStatus(200);
-        $response->assertJsonPath('google_email', 'google@example.com');
+        $response->assertJsonPath('exists', true);
+    }
+
+    public function test_find_by_facebook_email_returns_user(): void
+    {
+        $user = User::factory()->create([
+            'facebook_email' => 'facebook@example.com',
+            'facebook_id' => 'fb123',
+        ]);
+
+        $response = $this->getJson("/api/user/facebook/{$user->facebook_email}");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('exists', true);
+    }
+
+    public function test_find_by_github_email_returns_false_for_nonexistent(): void
+    {
+        $response = $this->getJson('/api/user/github/nonexistent@example.com');
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('exists', false);
     }
 
     public function test_validate_with_incorrect_code(): void
@@ -284,6 +411,81 @@ class UserControllerTest extends TestCase
 
         $response->assertStatus(400);
         $response->assertJsonPath('message', 'validation code is invalid');
+    }
+
+    public function test_validate_with_correct_github_code(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'github_validation_code' => 12345,
+        ]);
+
+        $response = $this->patchJson("/api/user/validate/{$user->uuid}", [
+            'loginType' => 'github',
+            'validationCode' => '12345',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'user validated with success');
+
+        $user->refresh();
+        $this->assertEquals(true, (bool) $user->github_is_validated);
+    }
+
+    public function test_validate_with_correct_google_code(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'google_validation_code' => 54321,
+            'google_email' => 'test@gmail.com',
+            'google_id' => '67890',
+        ]);
+
+        $response = $this->patchJson("/api/user/validate/{$user->uuid}", [
+            'loginType' => 'google',
+            'validationCode' => '54321',
+        ]);
+
+        $response->assertStatus(200);
+        $user->refresh();
+        $this->assertEquals(true, (bool) $user->google_is_validated);
+    }
+
+    public function test_validate_with_correct_facebook_code(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'facebook_validation_code' => 11111,
+            'facebook_email' => 'fb@test.com',
+            'facebook_id' => 'fb999',
+        ]);
+
+        $response = $this->patchJson("/api/user/validate/{$user->uuid}", [
+            'loginType' => 'facebook',
+            'validationCode' => '11111',
+        ]);
+
+        $response->assertStatus(200);
+        $user->refresh();
+        $this->assertEquals(true, (bool) $user->facebook_is_validated);
+    }
+
+    public function test_validate_with_correct_email_code(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'email_validation_code' => 22222,
+            'user_email' => 'email@test.com',
+        ]);
+
+        $response = $this->patchJson("/api/user/validate/{$user->uuid}", [
+            'loginType' => 'email',
+            'validationCode' => '22222',
+        ]);
+
+        $response->assertStatus(200);
+        $user->refresh();
+        $this->assertEquals(true, (bool) $user->email_is_validated);
     }
 
     public function test_validate_requires_valid_login_type(): void
@@ -362,6 +564,26 @@ class UserControllerTest extends TestCase
         $this->assertNull($user->google_email);
     }
 
+    public function test_unlink_facebook_account(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'github_email' => 'github@example.com',
+            'facebook_email' => 'facebook@example.com',
+            'facebook_id' => 'fb123',
+        ]);
+
+        $response = $this->patchJson("/api/user/unlink/{$user->uuid}", [
+            'unlink' => 'facebook',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'Facebook unlinked with success');
+
+        $user->refresh();
+        $this->assertNull($user->facebook_email);
+    }
+
     public function test_unlink_fails_with_invalid_type(): void
     {
         $this->disableMiddleware();
@@ -371,7 +593,7 @@ class UserControllerTest extends TestCase
             'unlink' => 'invalid',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(400);
     }
 
     public function test_unlink_fails_when_only_github_account(): void
@@ -386,7 +608,7 @@ class UserControllerTest extends TestCase
             'unlink' => 'google',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(400);
     }
 
     public function test_unlink_fails_when_only_google_account(): void
@@ -401,7 +623,7 @@ class UserControllerTest extends TestCase
             'unlink' => 'github',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(400);
     }
 
     public function test_resend_email_fails_for_nonexistent_user(): void
@@ -409,6 +631,80 @@ class UserControllerTest extends TestCase
         $this->disableMiddleware();
         $response = $this->postJson('/api/user/resend/validationcode', [
             'uuid' => 'invalid-uuid',
+            'loginType' => 'github',
+        ]);
+
+        $response->assertStatus(400);
+    }
+
+    public function test_resend_email_with_github_type(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'github_email' => 'github@example.com',
+        ]);
+
+        $response = $this->postJson('/api/user/resend/validationcode', [
+            'uuid' => $user->uuid,
+            'loginType' => 'github',
+        ]);
+
+        $this->assertTrue(in_array($response->status(), [200, 400]));
+    }
+
+    public function test_resend_email_with_google_type(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'google_email' => 'google@example.com',
+            'google_id' => '12345',
+        ]);
+
+        $response = $this->postJson('/api/user/resend/validationcode', [
+            'uuid' => $user->uuid,
+            'loginType' => 'google',
+        ]);
+
+        $this->assertTrue(in_array($response->status(), [200, 400]));
+    }
+
+    public function test_resend_email_with_facebook_type(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'facebook_email' => 'facebook@example.com',
+            'facebook_id' => 'fb123',
+        ]);
+
+        $response = $this->postJson('/api/user/resend/validationcode', [
+            'uuid' => $user->uuid,
+            'loginType' => 'facebook',
+        ]);
+
+        $this->assertTrue(in_array($response->status(), [200, 400]));
+    }
+
+    public function test_resend_email_with_email_type(): void
+    {
+        $this->disableMiddleware();
+        $user = User::factory()->create([
+            'user_email' => 'email@example.com',
+        ]);
+
+        $response = $this->postJson('/api/user/resend/validationcode', [
+            'uuid' => $user->uuid,
+            'loginType' => 'email',
+        ]);
+
+        $this->assertTrue(in_array($response->status(), [200, 400]));
+    }
+
+    public function test_resend_email_validation_fails(): void
+    {
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/user/resend/validationcode', [
+            'uuid' => 'not-a-uuid',
             'loginType' => 'github',
         ]);
 

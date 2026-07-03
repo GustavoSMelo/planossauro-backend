@@ -1,7 +1,7 @@
 # Planossauro Backend
 
 ![Laravel](https://img.shields.io/badge/Laravel-12.0-red?style=flat-square&logo=laravel)
-![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat-square)
+![PHP](https://img.shields.io/badge/PHP-8.5-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 ![Sanctum](https://img.shields.io/badge/Sanctum-4.0-orange?style=flat-square&logo=laravel)
 ![Stripe](https://img.shields.io/badge/Stripe-19.3-purple?style=flat-square)

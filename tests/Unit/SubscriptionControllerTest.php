@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class SubscriptionControllerTest extends TestCase
@@ -71,6 +72,26 @@ class SubscriptionControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonPath('message', 'User already has a subscription');
+    }
+
+    public function test_assign_free_plan_downgrades_existing_subscription_without_stripe(): void
+    {
+        config(['app.env' => 'local']);
+        $this->disableMiddleware();
+
+        $user = User::factory()->create();
+        $plan = Plans::factory()->create(['plan_name' => 'adm']);
+        $premiumPlan = Plans::factory()->premium()->create();
+        Subscription::factory()->create([
+            'user_id' => $user->uuid,
+            'plans_id' => $premiumPlan->uuid,
+            'stripe_subscription' => null,
+        ]);
+
+        $response = $this->postJson("/api/subscription/assign/free/{$user->uuid}");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'Plan downgraded with success');
     }
 
     public function test_assign_plan_to_user_creates_subscription(): void
@@ -194,6 +215,19 @@ class SubscriptionControllerTest extends TestCase
             'subscription',
             'plan',
         ]);
+    }
+
+    public function test_show_returns_null_for_user_without_subscription(): void
+    {
+        $this->disableMiddleware();
+
+        $user = User::factory()->create();
+
+        $response = $this->getJson("/api/subscription/{$user->uuid}");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('subscription', null);
+        $response->assertJsonPath('plan', null);
     }
 
     public function test_dashboard_returns_planning_usage(): void
@@ -335,5 +369,69 @@ class SubscriptionControllerTest extends TestCase
 
         $response->assertStatus(400);
         $response->assertJsonPath('message', 'subscription not founded');
+    }
+
+    public function test_change_payment_method_validation_fails(): void
+    {
+        $this->disableMiddleware();
+
+        $response = $this->putJson('/api/subscription/change/payment/method', []);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('0', 'Error in validation');
+    }
+
+    public function test_change_payment_method_no_subscription(): void
+    {
+        $this->disableMiddleware();
+
+        $user = User::factory()->create();
+
+        $response = $this->putJson('/api/subscription/change/payment/method', [
+            'return_url' => 'https://example.com',
+            'user_id' => $user->uuid,
+        ]);
+
+        $response->assertStatus(400);
+        $response->assertJsonPath('message', 'This user does not has subscription in our system');
+    }
+
+    public function test_change_subscription_plan_validation_fails(): void
+    {
+        $this->disableMiddleware();
+
+        $response = $this->putJson('/api/subscription/change/subscription/plan', []);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'Error in validation');
+    }
+
+    public function test_change_subscription_plan_no_subscription(): void
+    {
+        $this->disableMiddleware();
+
+        $user = User::factory()->create();
+
+        $response = $this->putJson('/api/subscription/change/subscription/plan', [
+            'user_id' => $user->uuid,
+            'return_url' => 'https://example.com',
+            'price' => 'price_test',
+        ]);
+
+        $response->assertStatus(400);
+        $response->assertJsonPath('message', 'Subscription was not found with this user');
+    }
+
+    public function test_assign_free_plan_in_production(): void
+    {
+        config(['app.env' => 'production']);
+        $this->disableMiddleware();
+
+        $user = User::factory()->create();
+        $freePlan = Plans::factory()->free()->create();
+
+        $response = $this->postJson("/api/subscription/assign/free/{$user->uuid}");
+
+        $response->assertStatus(200);
     }
 }

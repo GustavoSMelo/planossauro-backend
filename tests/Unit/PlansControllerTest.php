@@ -2,8 +2,11 @@
 
 namespace Tests\Unit;
 
+use App\Http\Controllers\PlansController;
 use App\Models\Plans;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Mockery;
 use Tests\TestCase;
 
 class PlansControllerTest extends TestCase
@@ -76,5 +79,45 @@ class PlansControllerTest extends TestCase
         $response = $this->getJson('/api/plans/nonexistent-uuid');
 
         $response->assertStatus(200);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_index_handles_database_exception(): void
+    {
+        $plansMock = Mockery::mock('alias:' . Plans::class);
+        $plansMock->shouldReceive('all')->once()->andThrow(new \Exception('Database error'));
+
+        $controller = new PlansController();
+        $response = $controller->index();
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $data = $response->getData(true);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('Error to receive plans from database', $data['error']);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_show_handles_database_exception(): void
+    {
+        $mockQuery = Mockery::mock();
+        $mockQuery->shouldReceive('where')->once()->with('uuid', '=', 'test-uuid')->andReturnSelf();
+        $mockQuery->shouldReceive('first')->once()->andThrow(new \Exception('Database error'));
+
+        $plansMock = Mockery::mock('alias:' . Plans::class);
+        $plansMock->shouldReceive('query')->once()->andReturn($mockQuery);
+
+        $controller = new PlansController();
+        $response = $controller->show('test-uuid');
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $data = $response->getData(true);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('a plan with this uuid was not found', $data['error']);
     }
 }
