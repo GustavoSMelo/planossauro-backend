@@ -20,7 +20,7 @@ class ValidateUserTokenByRouteTest extends TestCase
 
         $request = Request::create("/test/{$user->uuid}", 'GET');
         $request->headers->set('Authorization', 'Bearer ' . $token);
-        $request->setRouteResolver(function () use ($user) {
+        $request->setRouteResolver(function () use ($user, $request) {
             $route = new \Illuminate\Routing\Route('GET', '/test/{userUUID}', []);
             $route->bind($request);
             $route->setParameter('userUUID', $user->uuid);
@@ -47,7 +47,7 @@ class ValidateUserTokenByRouteTest extends TestCase
 
         $request = Request::create("/test/{$otherUser->uuid}", 'GET');
         $request->headers->set('Authorization', 'Bearer ' . $token);
-        $request->setRouteResolver(function () use ($otherUser) {
+        $request->setRouteResolver(function () use ($otherUser, $request) {
             $route = new \Illuminate\Routing\Route('GET', '/test/{userUUID}', []);
             $route->bind($request);
             $route->setParameter('userUUID', $otherUser->uuid);

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Http\Middleware\ValidateUserTokenByBodyGithubAccount;
+use App\Http\Middleware\ValidateUserTokenByRouteGithubAccount;
 use App\Models\User;
 use Closure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,7 +30,7 @@ class ValidateUserTokenByRouteGithubAccountTest extends TestCase
             return $route;
         });
 
-        $middleware = new ValidateUserTokenByBodyGithubAccount();
+        $middleware = new ValidateUserTokenByRouteGithubAccount();
         $called = false;
 
         $response = $middleware->handle($request, function ($req) use (&$called) {
@@ -59,7 +59,7 @@ class ValidateUserTokenByRouteGithubAccountTest extends TestCase
             return $route;
         });
 
-        $middleware = new ValidateUserTokenByBodyGithubAccount();
+        $middleware = new ValidateUserTokenByRouteGithubAccount();
         $called = false;
 
         $response = $middleware->handle($request, function ($req) use (&$called) {

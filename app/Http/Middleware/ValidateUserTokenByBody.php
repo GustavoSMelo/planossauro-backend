@@ -24,7 +24,7 @@ class ValidateUserTokenByBody
 
         $user = PersonalAccessToken::findToken($token)->tokenable;
 
-        if ($user->uuid === $uuidBody || $user->uuid === $uuidUserBody) return $next($request);
+        if ((string) $user->uuid === (string) $uuidBody || (string) $user->uuid === (string) $uuidUserBody) return $next($request);
 
         return response()->json([
             'Error' => 'You do not have permission to see this route or informations'
