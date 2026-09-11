@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
-class ValidateUserTokenByBodyGithubAccount
+class ValidateUserTokenByRouteGithubAccount
 {
     /**
      * Handle an incoming request.

@@ -28,3 +28,4 @@ _ide_helper.php
 .env.prod
 secrets/private.key
 secrets/*.private.key
+/tests/reports/*

@@ -23,7 +23,7 @@ class ValidateUserTokenByBodyUserID
 
         $user = PersonalAccessToken::findToken($token)->tokenable;
 
-        if ($user->uuid === $uuidBody) {
+        if ((string) $user->uuid === (string) $uuidBody) {
             return $next($request);
         }
 
