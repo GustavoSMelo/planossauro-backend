@@ -346,6 +346,124 @@ class PlanningController extends Controller
 
         $prompt = $request->input("prompt");
 
+        $message = $this->callOpenAi($prompt);
+
+        return response()->json([
+            "message" => $message,
+        ]);
+    }
+
+    /**
+     * Generate planning by context.
+     *
+     * Builds the LLM prompt server-side with the same output as the
+     * frontend getPrompt/getPromptEN helpers (prompt.ts), then forwards
+     * it to OpenAI. Frontend decides local vs backend via VITE_APP_MODE
+     * and calls this endpoint when not running locally.
+     */
+    public function generatePlanByContext(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "qsn" => ["required", "string"],
+            "activity" => ["required", "string"],
+            "locale" => ["nullable", "string", "max:10"],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    "message" => "Error on validation",
+                    "errors" => $validator->errors(),
+                ],
+                400,
+            );
+        }
+
+        $qsn = $request->input("qsn");
+        $activity = $request->input("activity");
+        $locale = $request->input("locale", "pt-BR");
+
+        $prompt =
+            $locale === "pt-BR"
+                ? $this->buildContextPrompt($qsn, $activity)
+                : $this->buildContextPromptEN($qsn, $activity);
+
+        $message = $this->callOpenAi($prompt);
+
+        return response()->json([
+            "message" => $message,
+        ]);
+    }
+
+    /**
+     * Same return as frontend getPrompt(qsn, activity) in prompt.ts.
+     */
+    private function buildContextPrompt(string $qsn, string $activity): string
+    {
+        $qsnEncoded = json_encode($qsn, JSON_UNESCAPED_UNICODE);
+
+        return <<<PROMPT
+        Contexto (JSON de referência): {$qsnEncoded}
+        Atividades: {$activity}
+
+        Voce e um professor educador e esta realizando um planejamento de aula
+        Tarefa: Com base nos dados acima, gere um JSON estrito.
+        Regras:
+        1. 'contextualizacao' deve descrever a integração das atividades e o benefício pedagógico, gere de forma resumida mas que aborde todo o conteúdo das atividades.
+        2. 'eixo', 'saber', 'aprendizagem' e 'foco_avaliativo' devem ser Arrays, com um item correspondente para cada atividade fornecida.
+        3. 'materiais' deve ser uma string única ou lista com os itens necessários, gere apenas os itens que consegue encontrar no dia a dia.
+
+        (Estrutura) Resposta em JSON esperada:
+        {
+          "contextualizacao": "string",
+          "eixo": ["string"],
+          "saber": ["string"],
+          "aprendizagem": ["string"],
+          "foco_avaliativo": ["string"],
+          "materiais": "string"
+        }
+
+        Respond ONLY with the JSON object
+        PROMPT;
+    }
+
+    /**
+     * Same return as frontend getPromptEN(qsn, activity) in prompt.ts.
+     */
+    private function buildContextPromptEN(
+        string $qsn,
+        string $activity,
+    ): string {
+        $qsnEncoded = json_encode($qsn, JSON_UNESCAPED_UNICODE);
+
+        return <<<PROMPT
+        Reference Context (JSON): {$qsnEncoded}
+        Activities: {$activity}
+
+        Role: You are an expert educator creating a weekly lesson plan.
+        Task: Based on the data above, generate a strict JSON object.
+
+        Rules:
+        1. 'contextualizacao': Summarize the integration of all activities and their pedagogical benefits. Ensure it covers all provided content concisely.
+        2. 'eixo', 'saber', 'aprendizagem', and 'foco_avaliativo': Must be Arrays, with one corresponding item for each provided activity.
+        3. 'materiais': A single string or list of required items. Include only everyday, easily accessible materials.
+
+        Expected JSON Structure:
+        {
+          "contextualizacao": "string",
+          "eixo": ["string"],
+          "saber": ["string"],
+          "aprendizagem": ["string"],
+          "foco_avaliativo": ["string"],
+          "materiais": "string"
+        }
+
+        Respond ONLY with the JSON object
+        PROMPT;
+    }
+
+    private function callOpenAi(string $prompt): ?string
+    {
         $response = Http::withHeaders([
             "Content-Type" => "application/json",
             "Authorization" => "Bearer " . config("services.openai.secret"),
@@ -360,42 +478,6 @@ class PlanningController extends Controller
                 ],
             ]);
 
-        $message = $response["output"][1]["content"][0]["text"];
-
-        // $response = Http::withHeaders([
-        //     "Content-Type" => "application/json",
-        //     "Authorization" => "Bearer " . config("services.openai.secret"),
-        // ])
-        //     ->timeout(120)
-        //     ->retry(3, 1000)
-        //     ->post("https://nano-gpt.com/api/v1/chat/completions", [
-        //         "model" => config("services.openai.model"),
-        //         "messages" => [
-        //             [
-        //                 "content" => $prompt,
-        //                 "role" => "user",
-        //             ],
-        //         ],
-        //     ]);
-
-        // if (!$response->successful()) {
-        //     return response()->json(
-        //         [
-        //             "message" => "Error calling nanoGPT API",
-        //             "status" => $response->status(),
-        //             "error" => $response->json(),
-        //         ],
-        //         $response->status(),
-        //     );
-        // }
-
-        // $result = $response->json();
-
-        // // Extract the message content from the response
-        // $message = $result["choices"][0]["message"]["content"] ?? null;
-
-        return response()->json([
-            "message" => $message,
-        ]);
+        return $response["output"][1]["content"][0]["text"] ?? null;
     }
 }

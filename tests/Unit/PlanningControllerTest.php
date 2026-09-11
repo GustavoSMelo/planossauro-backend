@@ -351,4 +351,203 @@ class PlanningControllerTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_create_fails_validation_without_prompt(): void
+    {
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/planning/create', []);
+
+        $response->assertJsonPath('message', 'Error on validation');
+        $response->assertJsonStructure(['errors']);
+    }
+
+    public function test_generate_plan_by_context_returns_message_pt_br(): void
+    {
+        Http::fake([
+            'api.openai.com/v1/responses' => Http::response([
+                'output' => [
+                    null,
+                    [
+                        'content' => [
+                            ['text' => 'Generated context plan content'],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/planning/create-by-context', [
+            'qsn' => '{"eixo": ["nature"]}',
+            'activity' => '{"day1": ["painting activity"]}',
+            'locale' => 'pt-BR',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'Generated context plan content');
+
+        Http::assertSent(function ($request) {
+            $payload = $request->data();
+            return isset($payload['input'])
+                && str_contains($payload['input'], 'Contexto (JSON de referência)')
+                && str_contains($payload['input'], 'painting activity');
+        });
+    }
+
+    public function test_generate_plan_by_context_returns_message_en(): void
+    {
+        Http::fake([
+            'api.openai.com/v1/responses' => Http::response([
+                'output' => [
+                    null,
+                    [
+                        'content' => [
+                            ['text' => 'Generated EN plan content'],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/planning/create-by-context', [
+            'qsn' => '{"axis": ["nature"]}',
+            'activity' => '{"day1": ["painting activity"]}',
+            'locale' => 'en-US',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'Generated EN plan content');
+
+        Http::assertSent(function ($request) {
+            $payload = $request->data();
+            return isset($payload['input'])
+                && str_contains($payload['input'], 'Reference Context (JSON)')
+                && str_contains($payload['input'], 'painting activity');
+        });
+    }
+
+    public function test_generate_plan_by_context_defaults_to_pt_br_locale(): void
+    {
+        Http::fake([
+            'api.openai.com/v1/responses' => Http::response([
+                'output' => [
+                    null,
+                    [
+                        'content' => [
+                            ['text' => 'Default locale plan'],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/planning/create-by-context', [
+            'qsn' => '{"eixo": ["nature"]}',
+            'activity' => '{"day1": ["activity"]}',
+        ]);
+
+        $response->assertStatus(200);
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->data()['input'] ?? '', 'Contexto (JSON de referência)');
+        });
+    }
+
+    public function test_generate_plan_by_context_returns_null_message_on_empty_ai_output(): void
+    {
+        Http::fake([
+            'api.openai.com/v1/responses' => Http::response(['output' => []], 200),
+        ]);
+
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/planning/create-by-context', [
+            'qsn' => '{"eixo": ["nature"]}',
+            'activity' => '{"day1": ["activity"]}',
+            'locale' => 'pt-BR',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', null);
+    }
+
+    public function test_generate_plan_by_context_fails_without_qsn(): void
+    {
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/planning/create-by-context', [
+            'activity' => '{"day1": ["activity"]}',
+        ]);
+
+        $response->assertStatus(400);
+        $response->assertJsonPath('message', 'Error on validation');
+        $response->assertJsonStructure(['errors' => ['qsn']]);
+    }
+
+    public function test_generate_plan_by_context_fails_without_activity(): void
+    {
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/planning/create-by-context', [
+            'qsn' => '{"eixo": ["nature"]}',
+        ]);
+
+        $response->assertStatus(400);
+        $response->assertJsonPath('message', 'Error on validation');
+        $response->assertJsonStructure(['errors' => ['activity']]);
+    }
+
+    public function test_generate_plan_by_context_fails_with_long_locale(): void
+    {
+        $this->disableMiddleware();
+
+        $response = $this->postJson('/api/planning/create-by-context', [
+            'qsn' => '{"eixo": ["nature"]}',
+            'activity' => '{"day1": ["activity"]}',
+            'locale' => 'this-locale-is-way-too-long',
+        ]);
+
+        $response->assertStatus(400);
+        $response->assertJsonStructure(['errors' => ['locale']]);
+    }
+
+    public function test_build_context_prompt_matches_frontend_get_prompt(): void
+    {
+        $controller = new \App\Http\Controllers\PlanningController();
+        $method = new \ReflectionMethod($controller, 'buildContextPrompt');
+        $method->setAccessible(true);
+
+        $prompt = $method->invoke($controller, '{"eixo": ["x"]}', '{"day1": ["draw"]}');
+
+        $this->assertStringContainsString('Contexto (JSON de referência)', $prompt);
+        $this->assertStringContainsString('Atividades:', $prompt);
+        $this->assertStringContainsString('draw', $prompt);
+        foreach (['contextualizacao', 'eixo', 'saber', 'aprendizagem', 'foco_avaliativo', 'materiais'] as $field) {
+            $this->assertStringContainsString($field, $prompt);
+        }
+        $this->assertStringContainsString('Respond ONLY with the JSON object', $prompt);
+    }
+
+    public function test_build_context_prompt_en_matches_frontend_get_prompt_en(): void
+    {
+        $controller = new \App\Http\Controllers\PlanningController();
+        $method = new \ReflectionMethod($controller, 'buildContextPromptEN');
+        $method->setAccessible(true);
+
+        $prompt = $method->invoke($controller, '{"axis": ["x"]}', '{"day1": ["draw"]}');
+
+        $this->assertStringContainsString('Reference Context (JSON)', $prompt);
+        $this->assertStringContainsString('Activities:', $prompt);
+        $this->assertStringContainsString('draw', $prompt);
+        foreach (['contextualizacao', 'eixo', 'saber', 'aprendizagem', 'foco_avaliativo', 'materiais'] as $field) {
+            $this->assertStringContainsString($field, $prompt);
+        }
+        $this->assertStringContainsString('Respond ONLY with the JSON object', $prompt);
+    }
 }
