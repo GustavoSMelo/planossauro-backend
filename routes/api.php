@@ -126,6 +126,11 @@ Route::prefix("planning")
         ])->middleware(ValidatePlanningID::class);
 
         Route::post("/create", [PlanningController::class, "create"]);
+
+        Route::post("/create-by-context", [
+            PlanningController::class,
+            "generatePlanByContext",
+        ]);
     });
 
 // PlanningHour routes
