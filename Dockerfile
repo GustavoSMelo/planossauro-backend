@@ -1,5 +1,5 @@
 # Getting from docker.hub an image with OS Debian + PHP + FPM already installed
-FROM php:8.5-fpm-trixie AS php-deb
+FROM php:8.5.12-fpm-trixie AS php-deb
 
 # Updating system/repository list and installing nginx, memcached and few dependencies required, also installing the PDO + MySQL driver
 RUN apt update && apt install -y nginx memcached libmemcached-dev libcurl4-openssl-dev libxml2-dev default-mysql-client && rm -rf /var/lib/apt/lists/*
